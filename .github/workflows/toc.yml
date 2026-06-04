@@ -51,11 +51,11 @@ jobs:
 
       - name: Run TOC updater
         env:
-          FILES: ${{ github.event.inputs.files || github.event.inputs.files || './README.md' }}
+          FILES: ${{ github.event.inputs.files || './README.md' }}
           COLLAPSED: ${{ github.event.inputs.collapsed || 'true' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python .github/actions/toc-action/insert_toc.py --files "${{ github.event.inputs.files }}" --collapsed "$COLLAPSED"
+          python .github/actions/toc-action/insert_toc.py --files "$FILES" --collapsed "$COLLAPSED"
 
       - name: Commit changes
         run: |

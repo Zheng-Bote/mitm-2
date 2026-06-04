@@ -104,6 +104,8 @@ def expand_patterns(patterns):
     out = []
     for p in patterns:
         p = p.strip()
+        if not p:
+            continue
         if any(ch in p for ch in "*?[]"):
             out.extend(glob(p, recursive=True))
         else:
@@ -137,6 +139,9 @@ def main():
     for p in paths:
         if not p.exists():
             print(f"Not found: {p}")
+            continue
+        if p.is_dir():
+            print(f"Skipping directory: {p}")
             continue
         try:
             changed = process_file(p, collapsed)
