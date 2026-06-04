@@ -2,7 +2,7 @@
 
 The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based ingestion and delivery pipeline. It collects raw data from heterogeneous source systems (such as databases, APIs, and CSV files), buffers it locally using Envelope Encryption (AES-GCM), transforms and validates the data, and aggregates it into daily JSON packages for batch delivery to a target SaaS platform.
 
-<img src="img/MitM_Data_Aggregator_transparent.png" maxwidth="300" height="auto">
+<img src="img/MitM_Data_Aggregator_transparent.png" maxwidth="150" height="auto">
 
 ---
 
