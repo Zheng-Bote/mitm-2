@@ -1,0 +1,22 @@
+name: Sync Repository to GitLab
+
+# Author: Robert Zheng
+# created: 2026-01-12
+# updated: 2026-02-01
+# version: 2.2.0
+# description: Sync Repository to GitLab
+
+run-name: Sync Repository to GitLab by ${{ github.actor }}
+
+on: push
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync to GitLab
+        uses: keninkujovic/gitlab-sync@2.1.3
+        with:
+          gitlab_url: ${{ secrets.GITLAB_URL }}
+          username: ${{ secrets.USERNAME }}
+          gitlab_pat: ${{ secrets.GITLAB_PAT }}
