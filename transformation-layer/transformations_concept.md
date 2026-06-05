@@ -161,7 +161,65 @@ Data quality failures during transformation or validation must not crash the orc
 
 ---
 
-## 6. Implementation Milestones
+## 6. Implementation Details & Guidelines
+
+To achieve high modularity, testability, and throughput, the Go implementation should adhere to the following architectural guidelines:
+
+### 6.1. Core Design Patterns
+- **Registry Pattern:** At startup, map string function names (from database configs) to Go functions:
+  ```go
+  type TransformFunc func(val interface{}, params map[string]interface{}) (interface{}, error)
+  type ValidateFunc func(val interface{}, params map[string]interface{}) (bool, error)
+
+  type EngineRegistry struct {
+      transforms map[string]TransformFunc
+      validators map[string]ValidateFunc
+  }
+  ```
+- **Pipeline (Chain of Responsibility) Pattern:** Models the lifecycle of processing a field as a sequential execution list:
+  1. Decrypt raw field value.
+  2. Execute registered `TransformFunc` chain.
+  3. Validate transformed value via `ValidateFunc` chain.
+- **Repository Pattern:** Abstract database operations (fetching raw data, rules config, targets, error logs) into clean interface repositories for simplified unit testing.
+
+### 6.2. Package Layout Structure
+```text
+transformation-layer/
+├── cmd/
+│   └── transformer/
+│       └── main.go           # Daemon entrypoint, runner configuration
+├── internal/
+│   ├── engine/
+│   │   ├── engine.go         # Core pipeline orchestrator
+│   │   ├── registry.go       # Go function registry mappings
+│   │   ├── transform/
+│   │   │   └── library.go    # Catalog of standard transform functions
+│   │   └── validate/
+│   │       └── library.go    # Catalog of standard validators
+│   ├── db/
+│   │   ├── mapping_repo.go   # Rules database loader
+│   │   └── ingestion_repo.go # Reads raw landing zone & updates targets/errors
+│   └── crypto/
+│       └── aes.go            # Envelope decryption/encryption helpers
+```
+
+### 6.3. Concurrency & Throughput
+To handle bulk data processing efficiently, the engine uses the **Worker Pool Pattern**:
+1. **Database-Level Batching:** Fetch batches of pending raw rows using row locking to support running multiple parallel transformer processes safely:
+   ```sql
+   SELECT id, topic, payload, nonce, dek_id FROM raw_ingestion
+   WHERE status = 'pending'
+   ORDER BY created_at ASC
+   LIMIT $1
+   FOR UPDATE SKIP LOCKED;
+   ```
+2. **Worker Channel Queue:** A main dispatcher fetches rows and puts them onto a task channel.
+3. **Goroutine Worker Pool:** $N$ concurrent goroutines pull jobs from the task channel, decrypt payloads, execute transformation/validation pipelines, and buffer target writes.
+4. **Transaction Scoping:** Write targets and status updates inside a transaction block (`pgx.Tx`). On validation failure, roll back target tables but commit the `failed_validation` status and error logs.
+
+---
+
+## 7. Implementation Milestones
 
 To implement this design:
 1. **Migration Execution:** Apply the SQL configuration schemas defined in `./migrations` to create the mapping registry tables.
