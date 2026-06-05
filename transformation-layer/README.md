@@ -40,6 +40,27 @@ The mapping system is modular, allowing you to define dynamic transformations an
 
 ```mermaid
 erDiagram
+    raw_ingestion {
+        UUID id PK
+        VARCHAR topic
+        VARCHAR source_system
+        UUID correlation_id
+        BYTEA payload
+        BYTEA nonce
+        UUID dek_id
+        VARCHAR status
+        TIMESTAMP created_at
+    }
+
+    transformation_errors {
+        UUID id PK
+        UUID raw_ingestion_id FK
+        VARCHAR failed_field
+        VARCHAR rule_name
+        TEXT error_message
+        TIMESTAMP created_at
+    }
+
     mapping_source {
         UUID id PK
         TEXT name
@@ -85,6 +106,7 @@ erDiagram
         INT version
     }
 
+    raw_ingestion ||--o{ transformation_errors : "logs validation errors"
     mapping_source ||--o{ mapping_rule : "provides fields"
     mapping_target_field ||--o{ mapping_rule : "receives mapping"
 ```
@@ -97,6 +119,7 @@ The following configuration schemas define the mapping data model:
 *   [001_mapping_rule.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/001_mapping_rule.sql) - Core rule bindings linking source fields to target fields, listing transformation and validation chains.
 *   [001_mapping_transformation.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/001_mapping_transformation.sql) - Definitions of transformation functions (e.g., date formatting, string manipulation).
 *   [001_mapping_validation.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/001_mapping_validation.sql) - Definitions of validation rules (e.g., regex checks, value ranges, email format validation).
+*   [002_transformation_errors.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/002_transformation_errors.sql) - Dead Letter Queue (DLQ) tracking errors during processing.
 
 ---
 
