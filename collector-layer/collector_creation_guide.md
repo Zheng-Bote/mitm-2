@@ -7,6 +7,7 @@ This guide describes how to implement a new data collector in the **Man-in-the-M
 ## 1. Core Principles & Requirements
 
 Every collector must adhere to the following design standards:
+
 - **Standalone Go Binary:** Build the collector as an independent Go program with its own `go.mod`. Do not couple it directly to the scheduler module tree.
 - **Envelope Encryption First:** All data written to the `raw_ingestion` landing zone must be encrypted with AES-GCM (12-byte random nonce) using a Data Encryption Key (DEK) retrieved from the target database.
 - **State Preservation (Cursors):** Query the source database incrementally using state-based cursors (e.g. tracking auto-incrementing IDs or modification timestamps) stored in `ingestion_cursors`.
@@ -23,7 +24,9 @@ A collector accepts two command-line arguments:
 2. **`os.Args[2]` (Optional):** A JSON string injected by the scheduler containing job-specific configuration overrides (e.g., target table name, source name, cursor column).
 
 ### TargetDBConfig Struct
+
 Define the structure for parsing `os.Args[1]`:
+
 ```go
 type TargetDBConfig struct {
 	Host       string `json:"host"`
@@ -37,7 +40,9 @@ type TargetDBConfig struct {
 ```
 
 ### Job Overrides Struct
+
 Define the structure for parsing the optional `os.Args[2]`:
+
 ```go
 type CollectorArgs struct {
 	SourceName   string `json:"source_name"`
@@ -122,6 +127,10 @@ func (c *IPCClient) SendAudit(message string) {
 }
 ```
 
+### Status and Audit Events
+
+Send progress and status milestones to the scheduler via `SendEvent` and audit events via `SendAudit`. See `../mitm_collector_pg-employee/main.go` for an example implementation.
+
 ---
 
 ## 5. Ingestion Workflow & Key Unwrap
@@ -129,41 +138,51 @@ func (c *IPCClient) SendAudit(message string) {
 Your main entry point must execute the following sequence:
 
 ### Step 1: Connect to Target MitM Database
+
 Parse `os.Args[1]`, parse overrides in `os.Args[2]`, construct the connection string, and instantiate a PostgreSQL connection pool.
+
 ```go
 mitmPool, err := pgxpool.New(ctx, mitmDSN)
 ```
 
 ### Step 2: Unwrap storage DEK using KEK
+
 Read the KEK from the `MASTER_KEY` environment variable. Query the database to retrieve the wrapped DEK and the encrypted source credentials:
+
 ```go
 // 1. Fetch encrypted config and KEK/DEK parameters
 err = mitmPool.QueryRow(ctx, `
-	SELECT config_payload, nonce, dek_id 
-	FROM source_credentials 
-	WHERE source_name = $1 AND is_active = true 
+	SELECT config_payload, nonce, dek_id
+	FROM source_credentials
+	WHERE source_name = $1 AND is_active = true
 	LIMIT 1
 `, targetCfg.SourceName).Scan(&configPayload, &credentialsNonce, &dekID)
 
 // 2. Fetch wrapped key
 err = mitmPool.QueryRow(ctx, `
-	SELECT wrapped_key 
-	FROM storage_keys 
-	WHERE id = $1 AND is_active = true 
+	SELECT wrapped_key
+	FROM storage_keys
+	WHERE id = $1 AND is_active = true
 	LIMIT 1
 `, dekID).Scan(&wrappedKey)
 ```
+
 Decrypt the wrapped key using the KEK (AES-GCM), and then decrypt the source database credentials using the resulting DEK.
 
 ### Step 3: Incremental Query Loop
+
 Retrieve the last cursor offset:
+
 ```go
 err = mitmPool.QueryRow(ctx, "SELECT last_cursor FROM ingestion_cursors WHERE source_name = $1", targetCfg.SourceName).Scan(&lastCursor)
 ```
+
 Query the source database for all records with an ID greater than the cursor offset.
 
 ### Step 4: Encrypt and Ingest
+
 For each database row fetched:
+
 1. Serialize the row data to JSON.
 2. Generate a random 12-byte nonce:
    ```go
@@ -172,17 +191,19 @@ For each database row fetched:
    ```
 3. Encrypt the serialized JSON via AES-GCM using the DEK.
 4. Insert the payload, nonce, topic, and referenced `dek_id` into the `raw_ingestion` table.
-5. Keep track of the highest ID processed (`maxIDProcessed`).
+5. Keep track of the highest cursor value processed (`maxCursorValue`).
 
 ### Step 5: Update Ingestion Cursor
+
 If any records were successfully inserted, update the offset:
+
 ```go
 _, err = mitmPool.Exec(ctx, `
 	INSERT INTO ingestion_cursors (source_name, last_cursor, updated_at)
 	VALUES ($1, $2, NOW())
-	ON CONFLICT (source_name) 
+	ON CONFLICT (source_name)
 	DO UPDATE SET last_cursor = EXCLUDED.last_cursor, updated_at = NOW()
-`, targetCfg.SourceName, strconv.Itoa(maxIDProcessed))
+`, targetCfg.SourceName, maxCursorValue)
 ```
 
 ---
@@ -190,5 +211,6 @@ _, err = mitmPool.Exec(ctx, `
 ## 6. Exit Codes & Error Handling
 
 To ensure the scheduler can track job failures and initiate retries if necessary:
+
 - **Exiting on Failure:** If an unrecoverable error occurs (e.g. database connection failure, decryption failure), send a `"failed"` status event via IPC (if configured) and exit using `log.Fatal` or `os.Exit(1)`.
 - **Exiting on Success:** When ingestion finishes successfully, send a `"finished"` event with progress `100` and exit with status code `0` (default on `main()` completion).
