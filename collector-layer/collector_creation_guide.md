@@ -20,12 +20,12 @@ Every collector must adhere to the following design standards:
 
 A collector accepts two command-line arguments:
 
-1. **`os.Args[1]` (Required):** A JSON string detailing the connection parameters to the central MitM target database.
-2. **`os.Args[2]` (Optional):** A JSON string injected by the scheduler containing job-specific configuration overrides (e.g., target table name, source name, cursor column).
+1. **`MITM_DB_*` Environment Variables (Required):** The central MitM target database connection parameters (e.g. `MITM_DB_HOST`, `MITM_DB_PORT`). Alternatively, `MITM_DB_CONFIG_JSON` can contain the full JSON.
+2. **`os.Args[1]` (Optional):** A JSON string injected by the scheduler containing job-specific configuration overrides (e.g., target table name, source name, cursor column).
 
 ### TargetDBConfig Struct
 
-Define the structure for parsing `os.Args[1]`:
+Define the structure for parsing the target DB variables (usually unmarshalled from `MITM_DB_CONFIG_JSON` or mapped manually):
 
 ```go
 type TargetDBConfig struct {
@@ -41,7 +41,7 @@ type TargetDBConfig struct {
 
 ### Job Overrides Struct
 
-Define the structure for parsing the optional `os.Args[2]`:
+Define the structure for parsing the optional `os.Args[1]` (job configuration):
 
 ```go
 type CollectorArgs struct {
@@ -139,7 +139,7 @@ Your main entry point must execute the following sequence:
 
 ### Step 1: Connect to Target MitM Database
 
-Parse `os.Args[1]`, parse overrides in `os.Args[2]`, construct the connection string, and instantiate a PostgreSQL connection pool.
+Parse `MITM_DB_*` connection credentials from the environment, parse overrides in `os.Args[1]`, construct the connection string, and instantiate a PostgreSQL connection pool.
 
 ```go
 mitmPool, err := pgxpool.New(ctx, mitmDSN)
