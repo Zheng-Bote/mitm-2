@@ -162,3 +162,14 @@ sequenceDiagram
     TARGET-->>O: DB Write Success
     end
 ```
+
+## 🛠️ Implementation
+
+The transformation engine is fully implemented in Go under the [`mitm_transformation`](./mitm_transformation) directory. 
+It operates as a **CLI Batch Job** orchestrated by a concurrent worker pool.
+
+Key capabilities include:
+- **Rule Caching**: Rules are loaded from the database once per run.
+- **Dead Letter Queue (DLQ)**: Failing validations are isolated without crashing the pipeline, and can be retried via the `--retry-failed` CLI flag.
+- **Envelope Encryption**: Target fields marked as sensitive are encrypted on-the-fly using AES-256-GCM.
+- **Concurrency**: High-throughput processing using row-level locking (`FOR UPDATE SKIP LOCKED` / `RETURNING`).
