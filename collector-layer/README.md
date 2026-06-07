@@ -10,7 +10,7 @@ The Collector Layer acts as a decoupled data acquisition component:
 
 ```mermaid
 flowchart TD
-    subgraph SourceSystems[Quellsystems]
+    subgraph SourceSystems[Data Sources]
         ORA[Databases]
         CSV[CSV/Excel, JSON Files]
         API[REST API]
