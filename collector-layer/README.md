@@ -10,10 +10,12 @@ The Collector Layer acts as a decoupled data acquisition component:
 
 ```mermaid
 flowchart TD
-    subgraph SourceSystems[Quellsysteme]
-        ORA[Oracle DB]
-        CSV[CSV Files]
+    subgraph SourceSystems[Quellsystems]
+        ORA[Databases]
+        CSV[CSV/Excel, JSON Files]
         API[REST API]
+        MFT[Datalake/MFT]
+        KAFKA[Kafka Topics]
     end
 
     subgraph CollectorLayer[Collector Layer]
@@ -27,6 +29,8 @@ flowchart TD
     ORA --> C
     CSV --> C
     API --> C
+    MFT --> C
+    KAFKA --> C
     ENC1 --> RAW
 ```
 
