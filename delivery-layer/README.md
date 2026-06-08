@@ -21,7 +21,7 @@ flowchart TD
         SNDR[SNDR / Delivery Sender]
     end
 
-    subgraph SaaS[SaaS Target Platform]
+    subgraph SaaS[Apigee or SaaS Target Platform]
         API[REST API / HTTPS POST]
     end
 

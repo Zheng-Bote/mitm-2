@@ -10,10 +10,12 @@ The Collector Layer acts as a decoupled data acquisition component:
 
 ```mermaid
 flowchart TD
-    subgraph SourceSystems[Quellsysteme]
-        ORA[Oracle DB]
-        CSV[CSV Files]
+    subgraph SourceSystems[Data Sources]
+        ORA[Databases]
+        CSV[CSV/Excel, JSON Files]
         API[REST API]
+        MFT[Datalake/MFT]
+        KAFKA[Kafka Topics]
     end
 
     subgraph CollectorLayer[Collector Layer]
@@ -27,6 +29,8 @@ flowchart TD
     ORA --> C
     CSV --> C
     API --> C
+    MFT --> C
+    KAFKA --> C
     ENC1 --> RAW
 ```
 
@@ -54,6 +58,6 @@ For a detailed explanation of the encryption models, schemas, and configurations
 
 ## 📦 Implementations
 
-*   **[mitm_collector_pg-employee](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/mitm_collector_pg-employee/main.go)**: A standalone Go collector that retrieves employee records from a source PostgreSQL database. It fetches connection details from `source_credentials`, decrypts them using AES-GCM envelope encryption (KEK/DEK), queries the source database using incremental cursor offsets, and stores the encrypted data fragments in `raw_ingestion`.
-*   **[mitm_collector_ora-employee](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/mitm_collector_ora-employee/main.go)**: A standalone Go collector that dynamically retrieves data records from an Oracle database table using the `go-ora` driver. It decrypts source connection details from `source_credentials` via KEK/DEK envelope encryption, queries new entries using dynamic scan values and cursor limits, and writes the encrypted JSON fragments to the `raw_ingestion` table.
+*   **[mitm_collector_pg](https://github.com/Zheng-Bote/mitm_collector_pg)**: A standalone Go collector that retrieves employee records from a source PostgreSQL database. It fetches connection details from `source_credentials`, decrypts them using AES-GCM envelope encryption (KEK/DEK), queries the source database using incremental cursor offsets, and stores the encrypted data fragments in `raw_ingestion`.
+*   **[mitm_collector_ora](https://github.com/Zheng-Bote/mitm_collector_ora)**: A standalone Go collector that dynamically retrieves data records from an Oracle database table using the `go-ora` driver. It decrypts source connection details from `source_credentials` via KEK/DEK envelope encryption, queries new entries using dynamic scan values and cursor limits, and writes the encrypted JSON fragments to the `raw_ingestion` table.
 

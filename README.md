@@ -51,6 +51,7 @@ flowchart TB
 
     admin -->|Manages configuration & logs| scheduler
     scheduler -->|Triggers & controls| collector
+    scheduler -->|Triggers transformation| transformer
     scheduler -->|Triggers packaging & delivery| delivery
 
     collector -->|Fetches raw data| sources
