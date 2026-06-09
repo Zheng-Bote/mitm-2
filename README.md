@@ -87,8 +87,8 @@ The project is structured into separated, decoupled layers:
 - **Location**: [collector-layer/README.md](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/README.md)
 - **Role**: Autonomous collectors that connect to source systems, fetch raw data, apply initial AES-GCM envelope encryption, and insert them into the `raw_ingestion` landing table.
 - **Implementations**:
-  *   [mitm_collector_pg-employee/](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/mitm_collector_pg-employee/main.go) - Ingests PostgreSQL employee data using state-based cursors.
-  *   [mitm_collector_ora-employee/](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/mitm_collector_ora-employee/main.go) - Ingests Oracle database tables dynamically using a pure-Go driver.
+  *   [mitm_collector_pg/](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/mitm_collector_pg/main.go) - Ingests PostgreSQL database tables dynamically using state-based cursors.
+  *   [mitm_collector_ora/](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/mitm_collector_ora/main.go) - Ingests Oracle database tables dynamically using a pure-Go driver.
 
 ### 3. [Transformation Layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer)
 

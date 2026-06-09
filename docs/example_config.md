@@ -168,6 +168,19 @@ Finally, map the source columns to the target fields. You can optionally apply t
 
 *Repeat this pattern for the remaining fields (e.g. `BUSINESS_MAIL` -> `Email`, `COMPANYCODE` -> `Organization.Code`, etc.).*
 
+### 3.6 Auto-Map (Smart Suggest)
+Instead of creating Mapping Rules manually one by one, you can use the Auto-Map feature. By providing an array of raw source field names, the backend uses fuzzy string matching (Levenshtein distance) to automatically link them to the most likely target fields and generates the rules for you.
+
+**Endpoint:** `POST /admin/transformation/auto-map`
+
+**Payload:**
+```json
+{
+  "source_id": "e0000000-0000-0000-0000-000000000001",
+  "source_fields": ["PERNR", "SOCIALSECURITYNR", "FIRST_NAME", "LAST_NAME"]
+}
+```
+
 ---
 
 ## 4. Delivery Layer Setup

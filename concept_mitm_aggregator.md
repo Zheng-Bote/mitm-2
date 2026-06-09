@@ -21,6 +21,7 @@
 ## 2. Bounded Contexts and Components
 
 - **MitM-Scheduler:** Located in [mitm_scheduler](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/scheduler/mitm_scheduler). Controls and triggers the collection and delivery processes.
+- **Admin Frontend:** Located in [admin-frontend](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/admin-frontend). A native C++/Qt UI for orchestrating the scheduler, mapping rules (Transformation Layer), and monitoring logs.
 - **Collector-Layer:** Responsible for connecting heterogeneous sources (CSV, APIs, DBs) via individual collectors (documented in [collector-layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer)). Retrieves raw data from these sources.
 - **Transformation-Layer:** Located in [transformation-layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer). Transforms raw data and performs validation.
 - **Delivery-Layer:** Builds packages (aggregating fragments into JSON packages) and sends them to the SaaS target platform, handling rate limits, retries, and DLQ (documented in [delivery-layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/delivery-layer)).

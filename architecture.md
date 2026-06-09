@@ -130,6 +130,10 @@ graph TD
         Scheduler[./scheduler/mitm_scheduler]
     end
 
+    subgraph UI [Admin UI]
+        Frontend[C++ Qt Frontend]
+    end
+
     subgraph App [MitM Aggregator Layers]
         subgraph Collector [Collector-Layer]
             CollCSV[CSV Collector]
@@ -151,6 +155,7 @@ graph TD
     SaaS[SaaS REST API]
 
     Scheduler -->|Control / Start| Collector
+    Frontend -->|REST API| Scheduler
     Collector -->|Retrieve Raw Data| Transform
     Transform -->|Save Normalized Fragments| DB
     Packager -->|Read Fragments / Save Packages| DB
@@ -160,7 +165,11 @@ graph TD
 
 ### MitM-Scheduler (Control)
 
-Located in [mitm_scheduler](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/scheduler/mitm_scheduler). Responsible for starting and orchestrating the collectors in the Collector-Layer.
+Located in [mitm_scheduler](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/scheduler/mitm_scheduler). Responsible for starting and orchestrating the collectors in the Collector-Layer, as well as exposing the REST API for the Admin Frontend.
+
+### Admin Frontend (UI)
+
+Located in [admin-frontend](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/admin-frontend/mitm_fe_cpp). A native C++ Qt application that serves as the visual control plane. It allows administrators to configure transformation mappings (including Auto-Map), schedule jobs, and monitor system/audit logs via secure REST APIs.
 
 ### Collector-Layer
 

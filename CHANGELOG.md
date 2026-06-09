@@ -5,6 +5,17 @@ All notable changes to the **Man-in-the-Middle (MitM) Data Aggregator** workspac
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [MVP-2.4.0] - 2026-06-09
+
+### Added
+- **Admin Frontend (C++ Qt)**: Introduced Auto-Map (Smart Suggest) for Transformation rules using Levenshtein distance matching. Added a "details" column to Admin Logs.
+- **Scheduler (Go)**: Added REST endpoint `/admin/transformation/auto-map` to calculate mapping suggestions.
+- **Documentation**: Created `data/example.md` and `data/example_config.sql` for Employee mappings. Updated `architecture.md` and `concept_mitm_aggregator.md` to formally document the Qt Admin Frontend.
+
+### Fixed
+- **Admin Frontend**: Fixed an issue where the Status Bar was cleared when opening the "About" dialog.
+- **Transformation Layer**: Fixed a bug where `json_parse` failed because `raw_ingestion.payload` was not decrypted. Added `EnvelopeDecrypt` logic in the Transformer worker before JSON parsing.
+
 ## [MVP-2.3.0] - 2026-06-06
 
 ### Changed
