@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS mapping_source (
     id UUID PRIMARY KEY,
     name TEXT NOT NULL,              -- Oracle_HR, SAP_HCM, CSV_Employees
     type TEXT NOT NULL,              -- oracle, csv, api, kafka
+    topic TEXT NOT NULL,             -- Employee, Department, etc.
     version INT NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );

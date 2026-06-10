@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS source_credentials (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     source_name     VARCHAR(100) NOT NULL UNIQUE, -- e.g., 'SAP_HR_PROD'
     connector_type  VARCHAR(50) NOT NULL,        -- e.g., 'REST_API', 'POSTGRESQL'
+    topic           VARCHAR(100) NOT NULL,       -- e.g., 'Employee'
     
     -- Encrypted Connection Config
     config_payload  BYTEA NOT NULL,              -- AES-GCM encrypted JSON
