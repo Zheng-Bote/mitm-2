@@ -129,6 +129,7 @@ psql -h <host> -U <user> -d mitm -f scheduler/mitm_scheduler/migrations/001_init
 psql -h <host> -U <user> -d mitm -f scheduler/mitm_scheduler/migrations/002_logging_and_audit.sql
 psql -h <host> -U <user> -d mitm -f scheduler/mitm_scheduler/migrations/003_admin_and_api.sql
 psql -h <host> -U <user> -d mitm -f scheduler/mitm_scheduler/migrations/004_add_name_unique.sql
+psql -h <host> -U <user> -d mitm -f scheduler/mitm_scheduler/migrations/006_rbac.sql
 
 # 2. Collector Init (storage keys, source credentials, raw ingestion landing tables, cursors)
 psql -h <host> -U <user> -d mitm -f collector-layer/migrations/001_raw_ingestions.sql
