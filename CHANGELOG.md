@@ -5,6 +5,15 @@ All notable changes to the **Man-in-the-Middle (MitM) Data Aggregator** workspac
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [MVP-2.5.0] - 2026-06-15
+
+### Added
+- **Centralized Application Telemetry**: Defined global application names, descriptions, and versions across all ecosystem components (Scheduler, Collectors, Transformation, Delivery).
+- **Startup IPC Logging**: All components now automatically broadcast their name and version via Unix Domain Sockets (`IPCClient`) on initialization.
+- **Dynamic Scheduler Versioning**: Added `ldflags` support to the Scheduler to allow compile-time overriding of the version variable (`-X main.version=$MITM_SERVER`).
+- **Validation Engine**: Expanded the transformation rules library with `min_length` and `max_length` validators.
+- **SaaS Audit Trails**: The Delivery Cority SaaS adapter now captures and logs the complete, raw HTTP response payload into the central `job_audit_log` table.
+
 ## [MVP-2.4.0] - 2026-06-09
 
 ### Added
