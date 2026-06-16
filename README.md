@@ -30,6 +30,36 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 ---
 
+## Project Overview
+The **MitM (Man-in-the-Middle) Data Aggregator** project is a secure and decoupled data ingestion and delivery pipeline written primarily in Go (Golang). The system collects raw data from heterogeneous source systems (e.g., PostgreSQL, Oracle, CSV, APIs), encrypts it locally ("at-rest"), validates and transforms it, and finally sends it as aggregated JSON batches to a target SaaS platform (e.g., Apigee).
+
+The project places high value on data security and the protection of personally identifiable information (PII) through the use of **Envelope Encryption** (AES-GCM with a two-tier key hierarchy: KEK and DEK) as well as crypto-shredding. PostgreSQL is used for data storage, buffering, and state management (e.g., cursors, dead letter queue).
+
+## Architecture & Core Components
+The system is divided into modularly decoupled layers that operate according to the "single responsibility" principle and are orchestrated by a central scheduler:
+
+1. **Scheduler (`scheduler/mitm_scheduler`)**: The control instance of the system. It orchestrates the execution of collectors and delivery jobs based on dynamic cron schedules and provides a REST API.
+2. **Collector Layer (`collector-layer/`)**: Independent collectors (e.g., `mitm_collector_pg`, `mitm_collector_ora`) that connect to source systems, retrieve raw data via cursors (state tracking), initially encrypt it, and store it as fragments.
+3. **Transformation Layer (`transformation-layer/`)**: Reads the raw data, decrypts it, applies dynamic mapping and validation rules, and stores the result for delivery.
+4. **Delivery Layer (`delivery-layer/`)**: Bundles the validated records into daily JSON packages and securely sends them via HTTPS POST (including idempotency keys) to the target system. In case of errors, exponential backoff and a Dead Letter Queue (DLQ) are utilized.
+5. **Admin Frontend (`admin-frontend/`)**: A separate C++ Qt application that serves as a visual management and monitoring interface (control plane) for administrators.
+
+## Technologies Used
+- **Backend**: Go 1.25.0+ (for performance, type safety, and single-binary deployments)
+- **Frontend / UI**: C++ with Qt framework
+- **Database & State Management**: PostgreSQL
+- **Security / Cryptography**: AES-GCM (Master Key + Data Encryption Keys)
+- **Monitoring & Logging**: Prometheus, `zerolog` (JSON)
+
+## Getting Started / First Steps for Execution
+1. **Database Migration**: Execute the SQL scripts from the `migrations/` directories of the respective layers in the PostgreSQL database.
+2. **Compilation**: Build the Go components (such as the scheduler and collectors) individually via `go build`.
+3. **Configuration & Startup**: Set the `MASTER_KEY` environment variable (KEK, exists only in RAM) and start the scheduler with the corresponding configuration file.
+
+## Conclusion of the MitM-Project
+The workspace contains a well-thought-out, scalable architecture designed for high security. The strict separation of data collection, processing, and delivery, combined with state-based polling (cursors), guarantees high resilience and fault tolerance. The documentation is detailed and professionally structured.
+
+
 ## 🏗️ C4 System & Component Context
 
 The diagram below shows how the system boundaries are structured and how the components interact with administrators and external systems:
