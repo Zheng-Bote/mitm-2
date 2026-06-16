@@ -19,7 +19,7 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 - [Conclusion of the MitM-Project](#conclusion-of-the-mitm-project)
 - [🏗️ C4 System & Component Context](#-c4-system-component-context)
 - [📂 Project Structure & Layers](#-project-structure-layers)
-  - [1. [MitM Scheduler](https://github.com/Zheng-Bote/mitm_scheduler)](#1-mitm-schedulerhttpsgithubcomzheng-botemitm_scheduler)
+  - [1. [MitM Scheduler](./scheduler)](#1-mitm-schedulerscheduler)
   - [2. [Collector Layer](./collector-layer)](#2-collector-layercollector-layer)
   - [3. [Transformation Layer](./transformation-layer)](#3-transformation-layertransformation-layer)
   - [4. [Delivery Layer](./delivery-layer)](#4-delivery-layerdelivery-layer)
