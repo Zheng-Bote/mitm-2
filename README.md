@@ -9,29 +9,6 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 ---
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 
-<details>
-<summary>Table of Contents</summary>
-
-- [Project Overview](#project-overview)
-- [Architecture & Core Components](#architecture-core-components)
-- [Technologies Used](#technologies-used)
-- [Getting Started / First Steps for Execution](#getting-started-first-steps-for-execution)
-- [Conclusion of the MitM-Project](#conclusion-of-the-mitm-project)
-- [🏗️ C4 System & Component Context](#-c4-system-component-context)
-- [📂 Project Structure & Layers](#-project-structure-layers)
-  - [1. [MitM Scheduler](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/scheduler)](#1-mitm-schedulerfilehomezb_bamboodev__new__gomitm-2scheduler)
-  - [2. [Collector Layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer)](#2-collector-layerfilehomezb_bamboodev__new__gomitm-2collector-layer)
-  - [3. [Transformation Layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer)](#3-transformation-layerfilehomezb_bamboodev__new__gomitm-2transformation-layer)
-  - [4. [Delivery Layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/delivery-layer)](#4-delivery-layerfilehomezb_bamboodev__new__gomitm-2delivery-layer)
-- [🔒 Security & Key Management](#-security-key-management)
-- [🛠️ Build and Running Instructions](#-build-and-running-instructions)
-  - [1. Prerequisites](#1-prerequisites)
-  - [2. Database Migrations](#2-database-migrations)
-  - [3. Compiling the Components](#3-compiling-the-components)
-  - [4. Running the Pipeline](#4-running-the-pipeline)
-
-</details>
-
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 ---
 
