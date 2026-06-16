@@ -12,6 +12,11 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 <details>
 <summary>Table of Contents</summary>
 
+- [Project Overview](#project-overview)
+- [Architecture & Core Components](#architecture-core-components)
+- [Technologies Used](#technologies-used)
+- [Getting Started / First Steps for Execution](#getting-started-first-steps-for-execution)
+- [Conclusion of the MitM-Project](#conclusion-of-the-mitm-project)
 - [🏗️ C4 System & Component Context](#-c4-system-component-context)
 - [📂 Project Structure & Layers](#-project-structure-layers)
   - [1. [MitM Scheduler](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/scheduler)](#1-mitm-schedulerfilehomezb_bamboodev__new__gomitm-2scheduler)
