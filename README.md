@@ -112,27 +112,24 @@ flowchart TB
 
 The project is structured into separated, decoupled layers:
 
-### 1. [MitM Scheduler](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/scheduler)
+### 1. [MitM Scheduler](https://github.com/Zheng-Bote/mitm_scheduler)
 
-- **Location**: [scheduler/README.md](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/scheduler/README.md)
+- **Location**: [scheduler/README.md](./scheduler/README.md)
 - **Role**: Orchestrates the execution of collectors and delivery jobs on dynamic cron schedules. It receives real-time execution feedback via a Unix domain socket IPC listener.
 
-### 2. [Collector Layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer)
+### 2. [Collector Layer](./collector-layer)
 
-- **Location**: [collector-layer/README.md](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/README.md)
+- **Location**: [collector-layer/README.md](./collector-layer/README.md)
 - **Role**: Autonomous collectors that connect to source systems, fetch raw data, apply initial AES-GCM envelope encryption, and insert them into the `raw_ingestion` landing table.
-- **Implementations**:
-  *   [mitm_collector_pg/](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/mitm_collector_pg/main.go) - Ingests PostgreSQL database tables dynamically using state-based cursors.
-  *   [mitm_collector_ora/](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/mitm_collector_ora/main.go) - Ingests Oracle database tables dynamically using a pure-Go driver.
 
-### 3. [Transformation Layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer)
+### 3. [Transformation Layer](./transformation-layer)
 
-- **Location**: [transformation-layer/README.md](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/README.md)
+- **Location**: [transformation-layer/README.md](./transformation-layer/README.md)
 - **Role**: Reads raw ingested records, decrypts them, applies mapping configurations, dynamic transformations, and validations, and writes target output fields to target tables.
 
-### 4. [Delivery Layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/delivery-layer)
+### 4. [Delivery Layer](./delivery-layer)
 
-- **Location**: [delivery-layer/README.md](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/delivery-layer/README.md)
+- **Location**: [delivery-layer/README.md](./delivery-layer/README.md)
 - **Role**: Aggregates target records into daily JSON batches (`packages`), executes secure delivery with HTTP idempotency key headers, handles transient errors via exponential backoff, and tracks failed messages inside the Dead Letter Queue (DLQ).
 
 ---
