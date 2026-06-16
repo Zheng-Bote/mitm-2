@@ -112,7 +112,7 @@ flowchart TB
 
 The project is structured into separated, decoupled layers:
 
-### 1. [MitM Scheduler](https://github.com/Zheng-Bote/mitm_scheduler)
+### 1. [MitM Scheduler](./scheduler)
 
 - **Location**: [scheduler/README.md](./scheduler/README.md)
 - **Role**: Orchestrates the execution of collectors and delivery jobs on dynamic cron schedules. It receives real-time execution feedback via a Unix domain socket IPC listener.
