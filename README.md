@@ -13,24 +13,25 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 <details>
 <summary>Table of Contents</summary>
 
-- [Project Overview](#project-overview)
-- [Architecture & Core Components](#architecture-core-components)
-- [Technologies Used](#technologies-used)
-- [Getting Started / First Steps for Execution](#getting-started-first-steps-for-execution)
-- [Conclusion of the MitM-Project](#conclusion-of-the-mitm-project)
-- [🏗️ C4 System & Component Context](#-c4-system-component-context)
-- [📂 Project Structure & Layers](#-project-structure-layers)
-  - [1. MitM Scheduler](#1-mitm-scheduler)
-  - [2. Collector Layer](#2-collector-layer)
-  - [3. [Transformation Layer](./transformation-layer)](#3-transformation-layertransformation-layer)
-  - [4. [Delivery Layer](./delivery-layer)](#4-delivery-layerdelivery-layer)
-  - [5. Admin Frontend](#5-admin-frontend)
-- [🔒 Security & Key Management](#-security-key-management)
-- [🛠️ Build and Running Instructions](#-build-and-running-instructions)
-  - [1. Prerequisites](#1-prerequisites)
-  - [2. Database Migrations](#2-database-migrations)
-  - [3. Compiling the Components](#3-compiling-the-components)
-  - [4. Running the Pipeline](#4-running-the-pipeline)
+- [Man-in-the-Middle (MitM) Data Aggregator](#man-in-the-middle-mitm-data-aggregator)
+  - [Project Overview](#project-overview)
+  - [Architecture \& Core Components](#architecture--core-components)
+  - [Technologies Used](#technologies-used)
+  - [Getting Started / First Steps for Execution](#getting-started--first-steps-for-execution)
+  - [Conclusion of the MitM-Project](#conclusion-of-the-mitm-project)
+  - [🏗️ C4 System \& Component Context](#️-c4-system--component-context)
+  - [📂 Project Structure \& Layers](#-project-structure--layers)
+    - [1. MitM Scheduler](#1-mitm-scheduler)
+    - [2. Collector Layer](#2-collector-layer)
+    - [3. Transformation Layer](#3-transformation-layer)
+    - [4. Delivery Layer](#4-delivery-layer)
+    - [5. Admin Frontend](#5-admin-frontend)
+  - [🔒 Security \& Key Management](#-security--key-management)
+  - [🛠️ Build and Running Instructions](#️-build-and-running-instructions)
+    - [1. Prerequisites](#1-prerequisites)
+    - [2. Database Migrations](#2-database-migrations)
+    - [3. Compiling the Components](#3-compiling-the-components)
+    - [4. Running the Pipeline](#4-running-the-pipeline)
 
 </details>
 
@@ -127,12 +128,12 @@ The project is structured into separated, decoupled layers:
 - **Location**: [collector-layer/README.md](./collector-layer/README.md)
 - **Role**: Autonomous collectors that connect to source systems, fetch raw data, apply initial AES-GCM envelope encryption, and insert them into the `raw_ingestion` landing table.
 
-### 3. [Transformation Layer](./transformation-layer)
+### 3. Transformation Layer
 
 - **Location**: [transformation-layer/README.md](./transformation-layer/README.md)
 - **Role**: Reads raw ingested records, decrypts them, applies mapping configurations, dynamic transformations, and validations, and writes target output fields to target tables.
 
-### 4. [Delivery Layer](./delivery-layer)
+### 4. Delivery Layer
 
 - **Location**: [delivery-layer/README.md](./delivery-layer/README.md)
 - **Role**: Aggregates target records into daily JSON batches (`packages`), executes secure delivery with HTTP idempotency key headers, handles transient errors via exponential backoff, and tracks failed messages inside the Dead Letter Queue (DLQ).
