@@ -7,28 +7,31 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 </div>
 
 ---
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 
 <details>
 <summary>Table of Contents</summary>
 
-- [🏗️ C4 System & Component Context](#-c4-system-component-context)
-- [📂 Project Structure & Layers](#-project-structure-layers)
-  - [1. [MitM Scheduler](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/scheduler)](#1-mitm-schedulerfilehomezb_bamboodev__new__gomitm-2scheduler)
-  - [2. [Collector Layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer)](#2-collector-layerfilehomezb_bamboodev__new__gomitm-2collector-layer)
-  - [3. [Transformation Layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer)](#3-transformation-layerfilehomezb_bamboodev__new__gomitm-2transformation-layer)
-  - [4. [Delivery Layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/delivery-layer)](#4-delivery-layerfilehomezb_bamboodev__new__gomitm-2delivery-layer)
-- [🔒 Security & Key Management](#-security-key-management)
-- [🛠️ Build and Running Instructions](#-build-and-running-instructions)
-  - [1. Prerequisites](#1-prerequisites)
-  - [2. Database Migrations](#2-database-migrations)
-  - [3. Compiling the Components](#3-compiling-the-components)
-  - [4. Running the Pipeline](#4-running-the-pipeline)
+- [Man-in-the-Middle (MitM) Data Aggregator](#man-in-the-middle-mitm-data-aggregator)
+  - [](#)
+  - [🏗️ C4 System \& Component Context](#️-c4-system--component-context)
+  - [📂 Project Structure \& Layers](#-project-structure--layers)
+    - [1. MitM Scheduler](#1-mitm-scheduler)
+    - [2. Collector Layer](#2-collector-layer)
+    - [3. Transformation Layer](#3-transformation-layer)
+    - [4. Delivery Layer](#4-delivery-layer)
+    - [5. Admin Frontend](#5-admin-frontend)
+  - [🔒 Security \& Key Management](#-security--key-management)
+  - [🛠️ Build and Running Instructions](#️-build-and-running-instructions)
+    - [1. Prerequisites](#1-prerequisites)
+    - [2. Database Migrations](#2-database-migrations)
+    - [3. Compiling the Components](#3-compiling-the-components)
+    - [4. Running the Pipeline](#4-running-the-pipeline)
 
 </details>
 
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
----
+## <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## 🏗️ C4 System & Component Context
 
@@ -77,28 +80,33 @@ flowchart TB
 
 The project is structured into separated, decoupled layers:
 
-### 1. [MitM Scheduler](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/scheduler)
+### 1. MitM Scheduler
 
-- **Location**: [scheduler/README.md](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/scheduler/README.md)
+- **Location**: [scheduler/README.md](./scheduler/README.md)
 - **Role**: Orchestrates the execution of collectors and delivery jobs on dynamic cron schedules. It receives real-time execution feedback via a Unix domain socket IPC listener.
 
-### 2. [Collector Layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer)
+### 2. Collector Layer
 
-- **Location**: [collector-layer/README.md](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/README.md)
+- **Location**: [collector-layer/README.md](./collector-layer/README.md)
 - **Role**: Autonomous collectors that connect to source systems, fetch raw data, apply initial AES-GCM envelope encryption, and insert them into the `raw_ingestion` landing table.
 - **Implementations**:
-  *   [mitm_collector_pg/](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/mitm_collector_pg/main.go) - Ingests PostgreSQL database tables dynamically using state-based cursors.
-  *   [mitm_collector_ora/](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/mitm_collector_ora/main.go) - Ingests Oracle database tables dynamically using a pure-Go driver.
+  - [mitm_collector_pg/](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/mitm_collector_pg/main.go) - Ingests PostgreSQL database tables dynamically using state-based cursors.
+  - [mitm_collector_ora/](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/mitm_collector_ora/main.go) - Ingests Oracle database tables dynamically using a pure-Go driver.
 
-### 3. [Transformation Layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer)
+### 3. Transformation Layer
 
-- **Location**: [transformation-layer/README.md](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/README.md)
+- **Location**: [transformation-layer/README.md](./transformation-layer/README.md)
 - **Role**: Reads raw ingested records, decrypts them, applies mapping configurations, dynamic transformations, and validations, and writes target output fields to target tables.
 
-### 4. [Delivery Layer](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/delivery-layer)
+### 4. Delivery Layer
 
-- **Location**: [delivery-layer/README.md](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/delivery-layer/README.md)
+- **Location**: [delivery-layer/README.md](./delivery-layer/README.md)
 - **Role**: Aggregates target records into daily JSON batches (`packages`), executes secure delivery with HTTP idempotency key headers, handles transient errors via exponential backoff, and tracks failed messages inside the Dead Letter Queue (DLQ).
+
+### 5. Admin Frontend
+
+- **Location**: [admin-frontend/README.md](./admin-frontend/README.md)
+- **Role**: Desktop Application for managing the MitM Data Aggregator.
 
 ---
 

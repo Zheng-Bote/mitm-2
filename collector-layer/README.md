@@ -58,6 +58,6 @@ For a detailed explanation of the encryption models, schemas, and configurations
 
 ## 📦 Implementations
 
-*   **[mitm_collector_pg](https://github.com/Zheng-Bote/mitm_collector_pg)**: A standalone Go collector that retrieves employee records from a source PostgreSQL database. It fetches connection details from `source_credentials`, decrypts them using AES-GCM envelope encryption (KEK/DEK), queries the source database using incremental cursor offsets, and stores the encrypted data fragments in `raw_ingestion`.
-*   **[mitm_collector_ora](https://github.com/Zheng-Bote/mitm_collector_ora)**: A standalone Go collector that dynamically retrieves data records from an Oracle database table using the `go-ora` driver. It decrypts source connection details from `source_credentials` via KEK/DEK envelope encryption, queries new entries using dynamic scan values and cursor limits, and writes the encrypted JSON fragments to the `raw_ingestion` table.
-
+- **[mitm_collector_pg](https://github.com/Zheng-Bote/mitm_collector_pg)**: A standalone Go collector that retrieves employee records from a source PostgreSQL database. It fetches connection details from `source_credentials`, decrypts them using AES-GCM envelope encryption (KEK/DEK), queries the source database using incremental cursor offsets, and stores the encrypted data fragments in `raw_ingestion`.
+- **[mitm_collector_ora](https://github.com/Zheng-Bote/mitm_collector_ora)**: A standalone Go collector that dynamically retrieves data records from an Oracle database table using the `go-ora` driver. It decrypts source connection details from `source_credentials` via KEK/DEK envelope encryption, queries new entries using dynamic scan values and cursor limits, and writes the encrypted JSON fragments to the `raw_ingestion` table.
+- **[mitm_collector_csv-xls](https://github.com/Zheng-Bote/mitm_collector_csv-xls)**: A standalone Go collector that retrieves data from a uploaded CSV or Excel file.
