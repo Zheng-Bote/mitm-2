@@ -14,6 +14,7 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 <summary>Table of Contents</summary>
 
 - [Man-in-the-Middle (MitM) Data Aggregator](#man-in-the-middle-mitm-data-aggregator)
+  - [](#)
   - [Project Overview](#project-overview)
   - [Architecture \& Core Components](#architecture--core-components)
   - [Technologies Used](#technologies-used)
@@ -118,12 +119,12 @@ flowchart TB
 
 The project is structured into separated, decoupled layers:
 
-### 1. [MitM Scheduler](./scheduler)
+### 1. MitM Scheduler
 
 - **Location**: [scheduler/README.md](./scheduler/README.md)
 - **Role**: Orchestrates the execution of collectors and delivery jobs on dynamic cron schedules. It receives real-time execution feedback via a Unix domain socket IPC listener.
 
-### 2. [Collector Layer](./collector-layer)
+### 2. Collector Layer
 
 - **Location**: [collector-layer/README.md](./collector-layer/README.md)
 - **Role**: Autonomous collectors that connect to source systems, fetch raw data, apply initial AES-GCM envelope encryption, and insert them into the `raw_ingestion` landing table.
