@@ -14,7 +14,6 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 <summary>Table of Contents</summary>
 
 - [Man-in-the-Middle (MitM) Data Aggregator](#man-in-the-middle-mitm-data-aggregator)
-  - [](#)
   - [Project Overview](#project-overview)
   - [Architecture \& Core Components](#architecture--core-components)
   - [Technologies Used](#technologies-used)
@@ -36,7 +35,7 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 
 </details>
 
-## <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Project Overview
 
