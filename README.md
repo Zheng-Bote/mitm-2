@@ -14,7 +14,11 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 <summary>Table of Contents</summary>
 
 - [Man-in-the-Middle (MitM) Data Aggregator](#man-in-the-middle-mitm-data-aggregator)
-  - [](#)
+  - [Project Overview](#project-overview)
+  - [Architecture \& Core Components](#architecture--core-components)
+  - [Technologies Used](#technologies-used)
+  - [Getting Started / First Steps for Execution](#getting-started--first-steps-for-execution)
+  - [Conclusion of the MitM-Project](#conclusion-of-the-mitm-project)
   - [🏗️ C4 System \& Component Context](#️-c4-system--component-context)
   - [📂 Project Structure \& Layers](#-project-structure--layers)
     - [1. MitM Scheduler](#1-mitm-scheduler)
@@ -32,6 +36,40 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 </details>
 
 ## <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+## Project Overview
+
+The **MitM (Man-in-the-Middle) Data Aggregator** project is a secure and decoupled data ingestion and delivery pipeline written primarily in Go (Golang). The system collects raw data from heterogeneous source systems (e.g., PostgreSQL, Oracle, CSV, APIs), encrypts it locally ("at-rest"), validates and transforms it, and finally sends it as aggregated JSON batches to a target SaaS platform (e.g., Apigee).
+
+The project places high value on data security and the protection of personally identifiable information (PII) through the use of **Envelope Encryption** (AES-GCM with a two-tier key hierarchy: KEK and DEK) as well as crypto-shredding. PostgreSQL is used for data storage, buffering, and state management (e.g., cursors, dead letter queue).
+
+## Architecture & Core Components
+
+The system is divided into modularly decoupled layers that operate according to the "single responsibility" principle and are orchestrated by a central scheduler:
+
+1. **Scheduler (`scheduler/mitm_scheduler`)**: The control instance of the system. It orchestrates the execution of collectors and delivery jobs based on dynamic cron schedules and provides a REST API.
+2. **Collector Layer (`collector-layer/`)**: Independent collectors (e.g., `mitm_collector_pg`, `mitm_collector_ora`) that connect to source systems, retrieve raw data via cursors (state tracking), initially encrypt it, and store it as fragments.
+3. **Transformation Layer (`transformation-layer/`)**: Reads the raw data, decrypts it, applies dynamic mapping and validation rules, and stores the result for delivery.
+4. **Delivery Layer (`delivery-layer/`)**: Bundles the validated records into daily JSON packages and securely sends them via HTTPS POST (including idempotency keys) to the target system. In case of errors, exponential backoff and a Dead Letter Queue (DLQ) are utilized.
+5. **Admin Frontend (`admin-frontend/`)**: A separate C++ Qt application that serves as a visual management and monitoring interface (control plane) for administrators.
+
+## Technologies Used
+
+- **Backend**: Go 1.25.0+ (for performance, type safety, and single-binary deployments)
+- **Frontend / UI**: C++ with Qt framework
+- **Database & State Management**: PostgreSQL
+- **Security / Cryptography**: AES-GCM (Master Key + Data Encryption Keys)
+- **Monitoring & Logging**: Prometheus, `zerolog` (JSON)
+
+## Getting Started / First Steps for Execution
+
+1. **Database Migration**: Execute the SQL scripts from the `migrations/` directories of the respective layers in the PostgreSQL database.
+2. **Compilation**: Build the Go components (such as the scheduler and collectors) individually via `go build`.
+3. **Configuration & Startup**: Set the `MASTER_KEY` environment variable (KEK, exists only in RAM) and start the scheduler with the corresponding configuration file.
+
+## Conclusion of the MitM-Project
+
+The workspace contains a well-thought-out, scalable architecture designed for high security. The strict separation of data collection, processing, and delivery, combined with state-based polling (cursors), guarantees high resilience and fault tolerance. The documentation is detailed and professionally structured.
 
 ## 🏗️ C4 System & Component Context
 
@@ -80,25 +118,22 @@ flowchart TB
 
 The project is structured into separated, decoupled layers:
 
-### 1. MitM Scheduler
+### 1. [MitM Scheduler](./scheduler)
 
 - **Location**: [scheduler/README.md](./scheduler/README.md)
 - **Role**: Orchestrates the execution of collectors and delivery jobs on dynamic cron schedules. It receives real-time execution feedback via a Unix domain socket IPC listener.
 
-### 2. Collector Layer
+### 2. [Collector Layer](./collector-layer)
 
 - **Location**: [collector-layer/README.md](./collector-layer/README.md)
 - **Role**: Autonomous collectors that connect to source systems, fetch raw data, apply initial AES-GCM envelope encryption, and insert them into the `raw_ingestion` landing table.
-- **Implementations**:
-  - [mitm_collector_pg/](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/mitm_collector_pg/main.go) - Ingests PostgreSQL database tables dynamically using state-based cursors.
-  - [mitm_collector_ora/](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/collector-layer/mitm_collector_ora/main.go) - Ingests Oracle database tables dynamically using a pure-Go driver.
 
-### 3. Transformation Layer
+### 3. [Transformation Layer](./transformation-layer)
 
 - **Location**: [transformation-layer/README.md](./transformation-layer/README.md)
 - **Role**: Reads raw ingested records, decrypts them, applies mapping configurations, dynamic transformations, and validations, and writes target output fields to target tables.
 
-### 4. Delivery Layer
+### 4. [Delivery Layer](./delivery-layer)
 
 - **Location**: [delivery-layer/README.md](./delivery-layer/README.md)
 - **Role**: Aggregates target records into daily JSON batches (`packages`), executes secure delivery with HTTP idempotency key headers, handles transient errors via exponential backoff, and tracks failed messages inside the Dead Letter Queue (DLQ).

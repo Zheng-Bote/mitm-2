@@ -104,8 +104,6 @@ def expand_patterns(patterns):
     out = []
     for p in patterns:
         p = p.strip()
-        if not p:
-            continue
         if any(ch in p for ch in "*?[]"):
             out.extend(glob(p, recursive=True))
         else:
@@ -127,7 +125,7 @@ def main():
                     help="true/false: wrap TOC in <details> (default: true)")
     args = ap.parse_args()
 
-    patterns = args.files.split(",")
+    patterns = [p for p in args.files.split(",") if p.strip()]
     collapsed = str(args.collapsed).lower() in ("1", "true", "yes")
     paths = expand_patterns(patterns)
 
@@ -139,9 +137,6 @@ def main():
     for p in paths:
         if not p.exists():
             print(f"Not found: {p}")
-            continue
-        if p.is_dir():
-            print(f"Skipping directory: {p}")
             continue
         try:
             changed = process_file(p, collapsed)

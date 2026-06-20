@@ -23,7 +23,7 @@ on:
       files:
         description: "Comma-separated files or globs"
         required: false
-        default: "README.md"
+        default: "./README.md, docs/**/*.md"
       collapsed:
         description: "true = collapsed <details>, false = expanded"
         required: false
@@ -51,7 +51,7 @@ jobs:
 
       - name: Run TOC updater
         env:
-          FILES: ${{ github.event.inputs.files || './README.md' }}
+          FILES: ${{ github.event.inputs.files || github.event.inputs.files || './README.md' }}
           COLLAPSED: ${{ github.event.inputs.collapsed || 'true' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
