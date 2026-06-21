@@ -5,8 +5,17 @@ All notable changes to the **Man-in-the-Middle (MitM) Data Aggregator** workspac
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [MVP-2.5.0] - 2026-06-15
+## [MVP-2.6.0] - 2026-06-21
 
+### Added
+- **Maintenance Layer**: Created the `mitm_cleanup` module to systematically purge historical logs (system/audit), successfully delivered fragments, packages, and dead letter queue entries based on dynamic JSON retention parameters (`retention_days`).
+- **End-to-End Test Suite**: Implemented `test_e2e.sh` orchestration script and a dedicated `mock_saas` server. Fully verified the architectural data flow from source ingestion (CSV) through the Transformation layer to secure SaaS Delivery.
+- **Delivery Layer Fallbacks**: Introduced mock development fallbacks for handling key-rotation disruptions during local end-to-end execution.
+
+### Fixed
+- **Database Schema Constraints**: Resolved structural foreign key conflicts (`raw_ingestion_id` vs `correlation_id`) in target insertion routines and error tables.
+
+## [MVP-2.5.0] - 2026-06-15
 ### Added
 - **Centralized Application Telemetry**: Defined global application names, descriptions, and versions across all ecosystem components (Scheduler, Collectors, Transformation, Delivery).
 - **Startup IPC Logging**: All components now automatically broadcast their name and version via Unix Domain Sockets (`IPCClient`) on initialization.
