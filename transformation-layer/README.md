@@ -1,6 +1,6 @@
 # Transformation Layer Documentation
 
-The **Transformation Layer** (also referred to as the Orchestrator/Transformation Engine) is responsible for reading raw ingested fragments from the database, decrypting them, applying mapping, transformation, and validation rules, encrypting the sensitive target fields, and writing the final data records to target tables.
+The **Transformation Layer** (also referred to as the Orchestrator/Transformation Engine) acts as a **Stateful Aggregator**. It is responsible for reading raw ingested fragments from the database, grouping them by their deterministically generated `correlation_id` (waiting until all required sources have arrived), decrypting them, merging them into a Golden Record, applying mapping, transformation, and validation rules, encrypting the sensitive target fields, and writing the final data records to target tables (`target_fragments`).
 
 **[Repo](https://github.com/Zheng-Bote/mitm_transformation)**
 
@@ -17,8 +17,9 @@ flowchart TD
     end
 
     subgraph TransformationLayer[Transformation Layer]
-        O[Orchestrator] --> DEC[Decrypt Raw Data]
-        DEC --> MAP[Load Mapping Rules]
+        O[Orchestrator: Group by correlation_id] --> DEC[Decrypt N Raw Fragments]
+        DEC --> MERGE[Merge Payloads into Golden Record]
+        MERGE --> MAP[Load Mapping Rules]
         MAP --> TR[Transformation Engine]
         TR --> VAL[Validation Engine]
         VAL --> ENC2[Encrypt Target Fields]
@@ -56,11 +57,16 @@ erDiagram
 
     transformation_errors {
         UUID id PK
-        UUID raw_ingestion_id FK
+        UUID correlation_id FK
         VARCHAR failed_field
         VARCHAR rule_name
         TEXT error_message
         TIMESTAMP created_at
+    }
+
+    topic_dependencies {
+        VARCHAR topic PK
+        TEXT[] required_sources
     }
 
     mapping_source {
@@ -108,7 +114,7 @@ erDiagram
         INT version
     }
 
-    raw_ingestion ||--o{ transformation_errors : "logs validation errors"
+    raw_ingestion ||--o{ transformation_errors : "logs validation errors via correlation_id"
     mapping_source ||--o{ mapping_rule : "provides fields"
     mapping_target_field ||--o{ mapping_rule : "receives mapping"
 ```
@@ -122,7 +128,9 @@ The following configuration schemas define the mapping data model:
 - [001_mapping_rule.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/001_mapping_rule.sql) - Core rule bindings linking source fields to target fields, listing transformation and validation chains.
 - [001_mapping_transformation.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/001_mapping_transformation.sql) - Definitions of transformation functions (e.g., date formatting, string manipulation).
 - [001_mapping_validation.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/001_mapping_validation.sql) - Definitions of validation rules (e.g., regex checks, value ranges, email format validation).
-- [002_transformation_errors.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/002_transformation_errors.sql) - Dead Letter Queue (DLQ) tracking errors during processing.
+- [006_transformation_errors.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/006_transformation_errors.sql) - Dead Letter Queue (DLQ) tracking errors during processing.
+- [007_target_fragments.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/007_target_fragments.sql) - The aggregated Golden Records stored securely.
+- [008_topic_dependencies.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/008_topic_dependencies.sql) - Defines which source systems are required for a given topic before aggregation occurs.
 
 ---
 
@@ -142,12 +150,13 @@ sequenceDiagram
 
     %% Orchestrator Phase
     rect rgb(230, 240, 255)
-    Note over O, RAW: Orchestration & Transformation Phase
-    O->>RAW: Fetch pending raw fragments
-    RAW-->>O: Raw fragments (encrypted payload)
+    Note over O, RAW: Orchestration & Stateful Aggregation Phase
+    O->>RAW: Fetch aggregated fragments (grouped by correlation_id, having required sources)
+    RAW-->>O: Raw fragments arrays (encrypted payloads)
 
-    O->>ENC: Decrypt raw payload with DEK (unwrapped via KEK)
-    ENC-->>O: Decrypted plaintext payload
+    O->>ENC: Decrypt N raw payloads with DEK
+    ENC-->>O: Decrypted plaintext payloads
+    O->>O: Merge N payloads into single Golden Record
 
     O->>RULES: Load mapping rules for topic & source
     RULES-->>O: Mapping rules, transformation & validation chains
@@ -161,7 +170,7 @@ sequenceDiagram
     O->>ENC: Encrypt sensitive target fields
     ENC-->>O: Encrypted ciphertext + nonce/metadata
 
-    O->>TARGET: Write final records to target table
+    O->>TARGET: Write final aggregated record to target_fragments
     TARGET-->>O: DB Write Success
     end
 ```
@@ -173,6 +182,7 @@ It operates as a **CLI Batch Job** orchestrated by a concurrent worker pool.
 
 Key capabilities include:
 
+- **Stateful Aggregation**: Groups and merges data from multiple independent source systems using deterministic Correlation IDs before transformation.
 - **Rule Caching**: Rules are loaded from the database once per run.
 - **Dead Letter Queue (DLQ)**: Failing validations are isolated without crashing the pipeline, and can be retried via the `--retry-failed` CLI flag.
 - **Envelope Encryption**: Target fields marked as sensitive are encrypted on-the-fly using AES-256-GCM.

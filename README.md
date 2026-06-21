@@ -1,6 +1,6 @@
 # Man-in-the-Middle (MitM) Data Aggregator
 
-The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based ingestion and delivery pipeline. It collects raw data from heterogeneous source systems (such as databases, APIs, and CSV files), buffers it locally using Envelope Encryption (AES-GCM), transforms and validates the data, and aggregates it into daily JSON packages for batch delivery to a target SaaS platform.
+The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based ingestion and delivery pipeline. It collects raw data from heterogeneous source systems (such as databases, APIs, and CSV files), buffers it locally using Envelope Encryption (AES-GCM), groups them deterministically via Correlation IDs (Stateful Aggregation), transforms and validates the merged data into Golden Records, and aggregates it into JSON packages for batch delivery to a target SaaS platform.
 
 <div align="center">
 <img src="img/MitM_Data_Aggregator_transparent.png" width="480px" height="auto">
@@ -25,6 +25,7 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
   - [3. Transformation Layer](#3-transformation-layer)
   - [4. Delivery Layer](#4-delivery-layer)
   - [5. Admin Frontend](#5-admin-frontend)
+  - [6. Maintenance Layer](#6-maintenance-layer)
 - [🔒 Security & Key Management](#-security-key-management)
 - [🛠️ Build and Running Instructions](#-build-and-running-instructions)
   - [1. Prerequisites](#1-prerequisites)
@@ -48,9 +49,10 @@ The system is divided into modularly decoupled layers that operate according to 
 
 1. **Scheduler (`scheduler/mitm_scheduler`)**: The control instance of the system. It orchestrates the execution of collectors and delivery jobs based on dynamic cron schedules and provides a REST API.
 2. **Collector Layer (`collector-layer/`)**: Independent collectors (e.g., `mitm_collector_pg`, `mitm_collector_ora`) that connect to source systems, retrieve raw data via cursors (state tracking), initially encrypt it, and store it as fragments.
-3. **Transformation Layer (`transformation-layer/`)**: Reads the raw data, decrypts it, applies dynamic mapping and validation rules, and stores the result for delivery.
+3. **Transformation Layer (`transformation-layer/`)**: Reads the raw data, waits until all required source fragments for a `correlation_id` arrive, decrypts them, merges them into a Golden Record, applies dynamic mapping and validation rules, and stores the result for delivery.
 4. **Delivery Layer (`delivery-layer/`)**: Bundles the validated records into daily JSON packages and securely sends them via HTTPS POST (including idempotency keys) to the target system. In case of errors, exponential backoff and a Dead Letter Queue (DLQ) are utilized.
-5. **Admin Frontend (`admin-frontend/`)**: A separate C++ Qt application that serves as a visual management and monitoring interface (control plane) for administrators.
+5. **Maintenance Layer (`maintenance-layer/`)**: Responsible for enforcing data retention policies. It purges old logs, processed raw fragments, successfully delivered packages, and expired metrics.
+6. **Admin Frontend (`admin-frontend/`)**: A separate C++ Qt application that serves as a visual management and monitoring interface (control plane) for administrators.
 
 ## Technologies Used
 
@@ -83,6 +85,7 @@ flowchart TB
         collector["Collector-Layer<br/>(Standalone Collectors)"]
         transformer["Transformation-Layer<br/>(Mapping & Validation Engine)"]
         delivery["Delivery-Layer<br/>(Packaging & Delivery Sender)"]
+        maintenance["Maintenance-Layer<br/>(Data Retention & Clean-Up)"]
         db[("PostgreSQL Storage<br/>(State, Raw, Target, Config, & DLQ)")]
     end
 
@@ -93,6 +96,7 @@ flowchart TB
     scheduler -->|Triggers & controls| collector
     scheduler -->|Triggers transformation| transformer
     scheduler -->|Triggers packaging & delivery| delivery
+    scheduler -->|Triggers cleanup| maintenance
 
     collector -->|Fetches raw data| sources
     collector -->|Saves raw encrypted data| db
@@ -101,6 +105,8 @@ flowchart TB
 
     delivery -->|Reads validated records & writes packages| db
     delivery -->|Delivers packages via HTTPS POST| saas
+
+    maintenance -->|Purges old logs & fragments| db
 
     classDef system fill:#1168bd,stroke:#0b4c8c,color:#fff;
     classDef external fill:#999999,stroke:#666666,color:#fff;
@@ -130,7 +136,7 @@ The project is structured into separated, decoupled layers:
 ### 3. Transformation Layer
 
 - **Location**: [transformation-layer/README.md](./transformation-layer/README.md)
-- **Role**: Reads raw ingested records, decrypts them, applies mapping configurations, dynamic transformations, and validations, and writes target output fields to target tables.
+- **Role**: Reads raw ingested records, waits for all required sources to arrive for a correlation ID, decrypts them, merges them into a Golden Record, applies mapping configurations, dynamic transformations, and validations, and writes target output fields to target tables.
 
 ### 4. Delivery Layer
 
@@ -141,6 +147,11 @@ The project is structured into separated, decoupled layers:
 
 - **Location**: [admin-frontend/README.md](./admin-frontend/README.md)
 - **Role**: Desktop Application for managing the MitM Data Aggregator.
+
+### 6. Maintenance Layer
+
+- **Location**: [maintenance-layer/README.md](./maintenance-layer/README.md)
+- **Role**: Runs configurable clean-up jobs (`mitm_cleanup`) to purge old processed records, system logs, and delivered packages according to strict GDPR and data retention policies.
 
 ---
 
@@ -182,6 +193,9 @@ psql -h <host> -U <user> -d mitm -f transformation-layer/migrations/001_mapping_
 psql -h <host> -U <user> -d mitm -f transformation-layer/migrations/001_mapping_transformation.sql
 psql -h <host> -U <user> -d mitm -f transformation-layer/migrations/001_mapping_validation.sql
 psql -h <host> -U <user> -d mitm -f transformation-layer/migrations/001_mapping_rule.sql
+psql -h <host> -U <user> -d mitm -f transformation-layer/migrations/006_transformation_errors.sql
+psql -h <host> -U <user> -d mitm -f transformation-layer/migrations/007_target_fragments.sql
+psql -h <host> -U <user> -d mitm -f transformation-layer/migrations/008_topic_dependencies.sql
 
 # 4. Delivery Init (JSON packages, DLQ)
 psql -h <host> -U <user> -d mitm -f delivery-layer/migrations/001_packages.sql
@@ -205,9 +219,17 @@ cd collector-layer/mitm_collector_pg-employee
 go build -o ../../bin/mitm-collector-pg-employee main.go
 ```
 
-### 4. Running the Pipeline
+### 4. Running the Pipeline (End-to-End Test)
 
-Export the Master Key KEK and start the scheduler with your encrypted configuration:
+To verify the entire chain locally, we provide a complete End-to-End Orchestration script. 
+It spins up a mock SaaS server, initializes database data, and runs the Collector, Transformation, and Delivery layers consecutively:
+
+```bash
+export MASTER_KEY="abcdefghijklmnopqrstuvwxyz123456"
+bash test_e2e.sh
+```
+
+Alternatively, to start the production scheduler with your encrypted configuration:
 
 ```bash
 export MASTER_KEY="Y29uZmlkZW50aWFsX21hc3Rlcl9rZXlfMzJfYnl0ZXM="

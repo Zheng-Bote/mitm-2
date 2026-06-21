@@ -17,7 +17,7 @@
 
 CREATE TABLE IF NOT EXISTS transformation_errors (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    raw_ingestion_id UUID NOT NULL REFERENCES raw_ingestion(id) ON DELETE CASCADE,
+    correlation_id UUID NOT NULL,
     failed_field VARCHAR(255) NOT NULL,
     rule_name VARCHAR(100) NOT NULL,
     error_message TEXT NOT NULL,

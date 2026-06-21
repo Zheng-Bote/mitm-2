@@ -11,7 +11,7 @@
 
 CREATE TABLE IF NOT EXISTS target_fragments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    raw_ingestion_id UUID NOT NULL,
+    correlation_id UUID NOT NULL,
     topic VARCHAR(255) NOT NULL,
     payload_jsonb JSONB NOT NULL,
     delivery_status VARCHAR(50) DEFAULT 'PENDING',

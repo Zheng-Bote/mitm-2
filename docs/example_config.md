@@ -48,8 +48,8 @@ The collector will use the `PERNR` column as an incremental cursor to only fetch
 ---
 
 ## 3. Transformation Layer Configuration
-The Transformation Layer maps the raw database columns into the final SaaS schema (`Demographics`).
-This requires configuring the Source Metadata, Target Fields, and finally linking them via Rules.
+The Transformation Layer acts as a **Stateful Aggregator**. It waits until data from all required source systems (e.g., `mirror-dev_employee` and an Active Directory source) for a given `correlation_id` have arrived before mapping the raw database columns into the final SaaS schema (`Demographics`).
+This requires configuring the Source Metadata, Target Fields, Topic Dependencies, and finally linking them via Rules.
 
 ### 3.1 Register Mapping Source
 Register the raw source system in the transformation layer.
@@ -233,3 +233,23 @@ Regardless of the chosen adapter:
 - Any delivery failures (e.g. HTTP 500 or Network Timeouts) are caught by the Delivery Engine and the package status remains `failed`. The engine uses exponential backoff for retries.
 - Fatal errors (e.g. HTTP 400 Bad Request) are immediately routed to the **Dead Letter Queue (DLQ)** table to prevent blocking the queue.
 
+---
+
+## 5. Maintenance Layer (Clean-Up Job)
+To ensure compliance with GDPR and general data retention policies, configure the `mitm_cleanup` job to periodically purge old logs and successfully processed fragments.
+
+**Endpoint:** `POST /admin/update-jobs`
+
+**Payload:**
+```json
+[
+  {
+    "id": "c3333333-3333-3333-3333-333333333333",
+    "source_name": "maintenance_engine",
+    "topic": "System_Cleanup",
+    "cron_expression": "0 2 * * *",
+    "json_args": "{\"retention_days_raw\": 7, \"retention_days_target\": 14, \"retention_days_logs\": 30, \"retention_days_audit\": 90}",
+    "is_active": true
+  }
+]
+```
