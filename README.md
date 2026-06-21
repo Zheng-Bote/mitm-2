@@ -31,7 +31,7 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
   - [1. Prerequisites](#1-prerequisites)
   - [2. Database Migrations](#2-database-migrations)
   - [3. Compiling the Components](#3-compiling-the-components)
-  - [4. Running the Pipeline](#4-running-the-pipeline)
+  - [4. Running the Pipeline (End-to-End Test)](#4-running-the-pipeline-end-to-end-test)
 
 </details>
 
