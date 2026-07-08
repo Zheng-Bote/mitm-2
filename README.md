@@ -56,7 +56,7 @@ The system is divided into modularly decoupled layers that operate according to 
 
 ## Technologies Used
 
-- **Backend**: Go 1.25.0+ (for performance, type safety, and single-binary deployments)
+- **Backend**: Go 1.26.5+ (for performance, type safety, and single-binary deployments)
 - **Frontend / UI**: C++ with Qt framework
 - **Database & State Management**: PostgreSQL
 - **Security / Cryptography**: AES-GCM (Master Key + Data Encryption Keys)
@@ -169,7 +169,7 @@ The project is structured into separated, decoupled layers:
 
 ### 1. Prerequisites
 
-- Go 1.25.0 or later.
+- Go 1.26.5 or later.
 - PostgreSQL Server.
 
 ### 2. Database Migrations
