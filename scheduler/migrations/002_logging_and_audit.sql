@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS job_audit_logs (
     id SERIAL PRIMARY KEY,
     run_id INT REFERENCES program_runs(id) ON DELETE CASCADE,
     message TEXT NOT NULL,
-    ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    component VARCHAR(255) DEFAULT 'Scheduler'
 );
 
 -- Add log_level to scheduler_config

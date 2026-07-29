@@ -122,7 +122,9 @@ CREATE TABLE IF NOT EXISTS packages (
     idempotency_key  UUID NOT NULL UNIQUE,           -- To ensure SaaS idempotency
     error_message    TEXT,                           -- Error description in case of failure
     created_at       TIMESTAMPTZ DEFAULT NOW(),
-    delivered_at     TIMESTAMPTZ
+    delivered_at     TIMESTAMPTZ,
+    next_retry_at    TIMESTAMPTZ DEFAULT NOW(),
+    topic            VARCHAR(255) DEFAULT 'default'
 );
 
 COMMENT ON TABLE packages IS 'Stores assembled data packages and tracks delivery state.';
@@ -313,7 +315,8 @@ CREATE TABLE IF NOT EXISTS job_status_events (
 CREATE TABLE IF NOT EXISTS scheduler_config (
     id SERIAL PRIMARY KEY,
     http_port INT DEFAULT 8080,
-    socket_path TEXT DEFAULT '/tmp/scheduler.sock'
+    socket_path TEXT DEFAULT '/tmp/scheduler.sock',
+    log_level TEXT DEFAULT 'INFO'
 );
 
 -- Insert default config if not exists
@@ -341,7 +344,8 @@ CREATE TABLE IF NOT EXISTS job_audit_logs (
     id SERIAL PRIMARY KEY,
     run_id INT REFERENCES program_runs(id) ON DELETE CASCADE,
     message TEXT NOT NULL,
-    ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    component VARCHAR(255) DEFAULT 'Scheduler'
 );
 
 -- Add log_level to scheduler_config
@@ -641,7 +645,7 @@ COMMENT ON TABLE mapping_validation IS 'Defines validation functions for data va
 
 CREATE TABLE IF NOT EXISTS transformation_errors (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    correlation_id UUID NOT NULL,
+    raw_ingestion_id UUID NOT NULL,
     failed_field VARCHAR(255) NOT NULL,
     rule_name VARCHAR(100) NOT NULL,
     error_message TEXT NOT NULL,
@@ -667,7 +671,7 @@ COMMENT ON TABLE transformation_errors IS 'Dead Letter Queue (DLQ) tracking tran
 
 CREATE TABLE IF NOT EXISTS target_fragments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    correlation_id UUID NOT NULL,
+    raw_ingestion_id UUID NOT NULL,
     topic VARCHAR(255) NOT NULL,
     payload_jsonb JSONB NOT NULL,
     delivery_status VARCHAR(50) DEFAULT 'PENDING',

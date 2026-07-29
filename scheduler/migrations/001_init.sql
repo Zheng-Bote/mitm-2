@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS job_status_events (
 CREATE TABLE IF NOT EXISTS scheduler_config (
     id SERIAL PRIMARY KEY,
     http_port INT DEFAULT 8080,
-    socket_path TEXT DEFAULT '/tmp/scheduler.sock'
+    socket_path TEXT DEFAULT '/tmp/scheduler.sock',
+    log_level TEXT DEFAULT 'INFO'
 );
 
 -- Insert default config if not exists

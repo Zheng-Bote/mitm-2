@@ -23,7 +23,9 @@ CREATE TABLE IF NOT EXISTS packages (
     idempotency_key  UUID NOT NULL UNIQUE,           -- To ensure SaaS idempotency
     error_message    TEXT,                           -- Error description in case of failure
     created_at       TIMESTAMPTZ DEFAULT NOW(),
-    delivered_at     TIMESTAMPTZ
+    delivered_at     TIMESTAMPTZ,
+    next_retry_at    TIMESTAMPTZ DEFAULT NOW(),
+    topic            VARCHAR(255) DEFAULT 'default'
 );
 
 COMMENT ON TABLE packages IS 'Stores assembled data packages and tracks delivery state.';
