@@ -5,7 +5,16 @@ All notable changes to the **Man-in-the-Middle (MitM) Data Aggregator** workspac
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [MVP-2.7.0-1-g772c928] - 2026-07-29
+
+## [MVP-2.8.0] - 2026-08-09
+
+### Added 
+- **Backup/Restore**: New role BACKUP-RESTORE and Methods for C++ Frontend and Webserver
+
+### Fixed
+- **SaaS_Cority Delivery***: Fixed DLQ for "Bad Gateway" error
+
+## [MVP-2.7.0] - 2026-07-29
 
 ### Added
 - **Delivery Layer**: Implemented configurable `slowdown` and `timeout` parameters for the `CORITY_SAAS` delivery adapter.

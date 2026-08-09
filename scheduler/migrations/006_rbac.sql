@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS roles (
 INSERT INTO roles (name, description) VALUES
 ('ADMIN', 'Full access to all system features'),
 ('VIEWER', 'Read-only access to monitoring and logs'),
-('UPLOADER', 'Access to manual file upload mechanisms (CSV/XLSX)')
+('UPLOADER', 'Access to manual file upload mechanisms (CSV/XLSX)'),
+('BACKUP-RESTORE', 'Access to export and import system configurations')
 ON CONFLICT (name) DO NOTHING;
 
 -- Table for user roles (encrypted assignment)

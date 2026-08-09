@@ -167,6 +167,7 @@ COMMENT ON TABLE dead_letter_queue IS 'Stores failed packages for troubleshootin
 
 CREATE INDEX IF NOT EXISTS idx_dlq_unresolved ON dead_letter_queue (resolved) WHERE resolved = FALSE;
 
+ALTER TABLE dead_letter_queue DROP CONSTRAINT IF EXISTS dead_letter_queue_package_id_fkey;
 
 -- ==========================================
 -- Source: delivery-layer/migrations/003_packages_retry.sql
