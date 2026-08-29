@@ -5,6 +5,17 @@ All notable changes to the **Man-in-the-Middle (MitM) Data Aggregator** workspac
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [MVP-2.9.0] - 2026-08-29
+
+### Added / Changed
+- **Documentation**: Comprehensive synchronization of all `README.md` and `CHANGELOG.md` files across the repository. The `./docs/*` directory is now fully consistent with the component-level documentation. Added "Key Architectural Principles" to the root README.
+- **System Architecture Alignment**: Resolved all findings from the recent code quality and security analysis to align the codebase 100% with `architecture.md`:
+  - **Atomicity**: Implemented `pgx.Batch` across all data collectors for transactional safety.
+  - **Security**: Added strict 32-byte length validation for Envelope Encryption KEKs and `subtle.ConstantTimeCompare` for Basic Auth.
+  - **Resilience**: Added context cancellations (`signal.NotifyContext`) for graceful shutdown on `SIGTERM`/`SIGINT`.
+  - **Resource Management**: Enforced `pgxpool` limits (`MaxConns`, `MaxConnLifetime`) to protect the PostgreSQL storage layer.
+  - **Observability**: Implemented DLQ error tracking and propagated failure metrics via IPC sockets to the Scheduler.
+- **Delivery Layer**: Bumped `mitm_delivery` version to `v0.18.0`.
 
 ## [MVP-2.8.0] - 2026-08-09
 

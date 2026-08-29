@@ -54,12 +54,20 @@ The system is divided into modularly decoupled layers that operate according to 
 5. **Maintenance Layer (`maintenance-layer/`)**: Responsible for enforcing data retention policies. It purges old logs, processed raw fragments, successfully delivered packages, and expired metrics.
 6. **Admin Frontend (`admin-frontend/`)**: A separate C++ Qt application that serves as a visual management and monitoring interface (control plane) for administrators.
 
+### Key Architectural Principles
+
+- **Atomicity & Batched Processing**: All data insertions and cursor updates are executed within strict transactional boundaries (`pgx.Batch`) to prevent partial data states or data loss on restarts.
+- **Resilience & Graceful Shutdown**: Components natively support `SIGTERM`/`SIGINT` context cancellations, flushing active batches cleanly before stopping.
+- **Strict Cryptographic Validation**: Encryption keys (KEKs) are rigorously validated for exact 32-byte length before processing, avoiding weak truncations.
+- **Error Tracking & IPC Status**: Subsystems continuously track ingestion successes and failures, communicating metrics back to the Scheduler via secure Unix domain sockets for transparent monitoring.
+- **Resource Management**: PostgreSQL connection pools enforce strict limits (`MaxConns`, `MaxConnLifetime`) to protect the database layer under high load.
+
 ## Technologies Used
 
 - **Backend**: Go 1.26.5+ (for performance, type safety, and single-binary deployments)
 - **Frontend / UI**: C++ with Qt framework
 - **Database & State Management**: PostgreSQL
-- **Security / Cryptography**: AES-GCM (Master Key + Data Encryption Keys)
+- **Security / Cryptography**: AES-GCM (Master Key + Data Encryption Keys), `subtle.ConstantTimeCompare`
 - **Monitoring & Logging**: Prometheus, `zerolog` (JSON)
 
 ## Getting Started / First Steps for Execution

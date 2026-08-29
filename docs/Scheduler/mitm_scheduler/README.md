@@ -30,6 +30,7 @@
   - [1. GUI Admin Tool (Fyne)](#1-gui-admin-tool-fyne)
   - [2. Remote REST API](#2-remote-rest-api)
     - [Update or Create Jobs:](#update-or-create-jobs)
+    - [Stop a Running Job (Requires ADMIN Role):](#stop-a-running-job-requires-admin-role)
     - [Download Database Logs with Date Filtering:](#download-database-logs-with-date-filtering)
     - [Download Logs as FlatBuffers Binary:](#download-logs-as-flatbuffers-binary)
 - [Injected Environment Variables](#injected-environment-variables)
@@ -48,6 +49,7 @@
 - **Dynamic Reloading**: Jobs can be updated via the API and reloaded without restarting the service.
 - **IPC over Unix Sockets**: Jobs report status events back to the scheduler via JSON-Lines.
 - **Admin API**: Remote job management with authentication and RBAC, including automatic `next_run` cron calculations, active job termination (`/admin/stop-job` for `ADMIN` role), and high-performance FlatBuffers binary endpoints (`/admin/*_bin`).
+- **Configuration Backup & Restore**: Export and import the complete system configuration (jobs, sources, targets, rules) as JSON via API (requires `BACKUP-RESTORE` role).
 - **Enhanced Logging**:
   - `system_logs`: Core scheduler lifecycle events.
   - `job_status_events`: Real-time job progress tracking.
