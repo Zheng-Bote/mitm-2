@@ -1,0 +1,20 @@
+Spec: Admin Frontend
+
+Purpose:
+  Native C++/Qt UI for managing and monitoring the MitM Data Aggregator.
+
+Platform: C++
+
+References:
+  ../mitm-2.sdd
+
+Owns:
+  ./**
+
+Must:
+  Avoid using hardcoded fallback authentication tokens.
+  Manage object lifecycles safely to avoid use-after-free conditions.
+
+Tasks:
+  [x] #1 Remove the hardcoded fallback token in ConfigManager::GetAuthHeader.
+  [x] #2 Fix the use-after-free risk in the update thread of the About dialog (MainWindow.cpp).

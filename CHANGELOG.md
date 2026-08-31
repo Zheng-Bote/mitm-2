@@ -5,6 +5,17 @@ All notable changes to the **Man-in-the-Middle (MitM) Data Aggregator** workspac
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [MVP-2.10.0] - 2026-08-31
+
+### Added / Changed
+- **Spec-Driven Security Baseline**: Completed all open tasks from the `collector-layer.sdd`, `scheduler.sdd`, and `admin-frontend.sdd` SpecDD contracts to secure the architecture.
+- **SQL Injection Prevention**: Replaced naive sanitization with a strict `validateIdentifier` allowlist logic for Oracle and PostgreSQL collector dynamic table and cursor queries.
+- **Atomic Database Transactions**: Refactored Oracle database collectors to utilize batch transactions (`tx.Begin()` and `tx.Commit()`), perfectly aligning row ingestion and cursor updates in an atomic step.
+- **Kafka Offset Safety**: Implemented transactional PostgreSQL boundaries in the Kafka collector, strictly enforcing that `CommitMessages()` is skipped if any PostgreSQL partial failure occurs.
+- **Administrative RBAC Authorization**: Upgraded scheduler HTTP endpoints (e.g., `handleGetOsUserRoles`, `handleDLQ`) to use `requireAdmin(w, r)`, blocking unauthenticated or unprivileged access to administrative functionality.
+- **Frontend Security**: Fixed use-after-free pointer risks in asynchronous update checks via Qt Smart Pointers (`QPointer`) and removed hardcoded fallback authentication tokens.
+
 ## [MVP-2.9.0] - 2026-08-29
 
 ### Added / Changed

@@ -57,7 +57,7 @@
 ## 6. Security and Key Management
 
 - **Envelope Encryption:** Each fragment gets a generated DEK (Data Encryption Key). The DEK is stored encrypted with the KEK (Key Encryption Key / MasterKey).
-- **MasterKey Handling:** **The KEK must never be persisted**. It is injected into the container via GHES Secrets as an environment variable or at runtime from AWS Secrets Manager/Vault.
+- **MasterKey Handling:** **The KEK must never be persisted**. It is provided to the root Scheduler container, which securely injects it and database credentials into temporary sub-processes via a bidirectional Unix Domain Socket (IPC). Child processes never inherit environment variables.
 - **TLS:** All external connections (SaaS, AWS services) enforce TLS 1.2+.
 - **Audit:** An audit log records key rotations, app starts, and failed authentication attempts.
 - **Key Rotation:** The KEK is rotated regularly; existing encrypted DEKs can be re-encrypted with the new KEK in a batch process.
@@ -92,8 +92,8 @@
 
 ### Security Flow Diagram
 
-1. **Start:** Application starts, retrieves `MASTER_KEY` (KEK) via environment from GHES/Vault into RAM.
-2. **Collect:** Collector-Layer retrieves new data from sources.
+1. **Start:** Scheduler starts, retrieves `MASTER_KEY` (KEK) into RAM, and opens a secure IPC Unix socket.
+2. **Collect:** Collector-Layer instances boot, fetch the KEK and DB credentials securely via the IPC socket, and retrieve new data from sources.
 3. **Transform & Validate:** Transformation-Layer validates and normalizes the data.
 4. **DEK Gen:** App generates a random 32-byte DEK (Data Encryption Key) for this fragment.
 5. **Encrypt Payload:** Data is encrypted via AES-GCM and DEK (`payload_encrypted`).

@@ -1,0 +1,26 @@
+Spec: Collector Layer
+
+Purpose:
+  Fetch data from various source systems (APIs, SQL, CSV) and store it in a central PostgreSQL RAW Table safely.
+
+Platform: Go/Linux
+
+References:
+  ../mitm-2.sdd
+
+Owns:
+  ./**
+
+Must:
+  All data written to the `raw_ingestion` landing zone is encrypted with AES-GCM using a Data Encryption Key (DEK).
+  The Master Key (KEK) and database credentials are fetched via IPC from the scheduler at process startup.
+  Query the source database incrementally using state-based cursors.
+  Report execution progress and audit events back to the parent scheduler over a nil-safe Unix Domain Socket.
+  Table identifiers and column names used in dynamic SQL queries must be strictly validated against a strict alphanumeric pattern (allowlist of safe characters) or database metadata.
+  The ingestion of data fragments into raw_ingestion and the progression of the cursor in ingestion_cursors must be executed atomically within a single database transaction.
+  Kafka consumer offsets must only be committed after the corresponding data is successfully persisted to PostgreSQL.
+
+Tasks:
+  [x] #1 Eliminate SQL injection risks by validating dynamic table and cursor column identifiers in Oracle and PostgreSQL collectors.
+  [x] #2 Wrap row ingestion and cursor updates in a single database transaction for all database collectors to prevent data duplication.
+  [x] #3 Ensure Kafka offsets are not committed if the database insert fails in mitm_collector_kafka.

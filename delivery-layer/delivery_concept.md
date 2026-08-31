@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS dead_letter_queue (
 ```
 
 ### Implementation Detail: Dynamic Targeting
-Since the `packages` table is agnostic of the destination, the target endpoint (SaaS vs APIGEE) and credentials are provided to the Delivery CLI batch job at runtime via the `mitm_scheduler` JSON configuration `os.Args[1]`. The MitM Database credentials themselves are injected globally via Environment Variables (`MITM_DB_*`). The Orchestrator uses this config to dynamically bind the correct `DeliverySender` adapter.
+Since the `packages` table is agnostic of the destination, the target endpoint (SaaS vs APIGEE) and credentials are provided to the Delivery CLI batch job at runtime via the `mitm_scheduler` JSON configuration `os.Args[1]`. The MitM Database credentials and KEK themselves are injected dynamically via the IPC Socket from the Scheduler. The Orchestrator uses this config to dynamically bind the correct `DeliverySender` adapter.
 
 ### Future Enhancements
 - **Concurrency:** The Retry Engine can spawn multiple goroutines to drain the `packages` table in parallel (using `FOR UPDATE SKIP LOCKED`).

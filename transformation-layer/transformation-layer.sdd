@@ -1,0 +1,16 @@
+Spec: Transformation Layer
+
+Purpose:
+  Transform and validate raw data fragments before delivery.
+
+Platform: Go/Linux
+
+References:
+  ../mitm-2.sdd
+
+Owns:
+  ./**
+
+Must:
+  Read raw fragments, map fields according to schemas, and apply validation rules.
+  Report progress and errors back to the scheduler via IPC.

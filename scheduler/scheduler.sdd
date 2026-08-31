@@ -1,0 +1,22 @@
+Spec: Scheduler
+
+Purpose:
+  Orchestrate the collection and delivery processes, and provide an IPC credential broker.
+
+Platform: Go/Linux
+
+References:
+  ../../mitm-2.sdd
+
+Owns:
+  ./**
+
+Must:
+  The IPC Server listens on a Unix Domain Socket for events and credential requests.
+  Respond to `{"type": "get_credentials"}` requests by returning the in-memory KEK and Database JSON configuration.
+  Not pass the DB credentials or KEK via environment variables to spawned child processes.
+  Handle and persist `status` and `audit` events received via IPC from child processes.
+  All HTTP endpoints must strictly enforce authentication, and all RBAC management endpoints must enforce administrative authorization.
+
+Tasks:
+  [x] #1 Enforce authentication and administrative authorization on all RBAC management endpoints, including /admin/rbac/os_user_roles.

@@ -254,7 +254,9 @@ graph TD
 ## Security & Key Management
 
 - **Envelope Encryption:** KEK (MasterKey) resides only in RAM. DEKs are stored encrypted in the DB.
-- **TLS:** HTTPS for all external calls.
+- **IPC Secrets Broker:** The Scheduler securely distributes the KEK and database credentials to isolated sub-collector processes exclusively via bidirectional Unix Domain Sockets (`.sock`). Environment variables are intentionally scrubbed to prevent leakage.
+- **Atomic Operations:** All data ingestion and cursor progressions are guaranteed atomic using strict PostgreSQL transactions (`pgx.Batch`), ensuring robust at-least-once delivery semantics for message brokers (Kafka).
+- **TLS & RBAC:** HTTPS for all external calls. Internal administrative HTTP endpoints enforce strict Basic Authentication and administrative Role-Based Access Control (RBAC).
 - **Least Privilege:** Container runs as a non-root user with restricted filesystem permissions.
 
 ## Monitoring & Diagnostics

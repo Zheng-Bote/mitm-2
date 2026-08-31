@@ -1,0 +1,20 @@
+Spec: Delivery Layer
+
+Purpose:
+  Securely and reliably transmit transformed and encrypted records from the local PostgreSQL database to external target systems.
+
+Platform: Go/Linux
+
+References:
+  ../mitm-2.sdd
+
+Owns:
+  ./**
+
+Must:
+  Batch pending records into Delivery Packages.
+  Generate a unique Idempotency-Key for every package.
+  Persist packages into a central `delivery_outbox` table (Outbox Pattern).
+  Implement an Exponential Backoff retry engine for transient network errors.
+  Move permanently failed packages to a Dead Letter Queue (DLQ).
+  Target endpoints and credentials are provided to the batch job dynamically at runtime.

@@ -58,7 +58,7 @@ type CollectorArgs struct {
 
 Collectors load context and security keys from the following environment variables:
 
-- **`MASTER_KEY` (Required):** The base64-encoded 32-byte Master Key (KEK) used to unwrap the storage DEK.
+- **`MASTER_KEY` (Required):** The base64-encoded 32-byte Master Key (KEK). When running under the scheduler, this is fetched dynamically via the IPC socket. When running standalone, it must be provided as an environment variable.
 - **`RUN_ID` (Optional):** The run instance ID injected by the scheduler.
 - **`SCHEDULER_SOCKET_PATH` (Optional):** The file path to the Unix Domain Socket of the scheduler.
 
@@ -79,9 +79,40 @@ type StatusEvent struct {
 	Progress int    `json:"progress"`
 }
 
+type CredentialsResponse struct {
+	MasterKey    string `json:"master_key"`
+	DBConfigJSON string `json:"db_config_json"`
+}
+
 type IPCClient struct {
 	SocketPath string
 	RunID      int
+}
+
+func (c *IPCClient) GetCredentials() (CredentialsResponse, error) {
+	var resp CredentialsResponse
+	if c == nil || c.SocketPath == "" {
+		return resp, fmt.Errorf("ipc client not configured")
+	}
+	conn, err := net.Dial("unix", c.SocketPath)
+	if err != nil {
+		return resp, err
+	}
+	defer conn.Close()
+	conn.SetDeadline(time.Now().Add(5 * time.Second))
+
+	req := map[string]interface{}{"type": "get_credentials", "run_id": c.RunID}
+	data, _ := json.Marshal(req)
+	if _, err := conn.Write(append(data, '\n')); err != nil {
+		return resp, err
+	}
+
+	scanner := bufio.NewScanner(conn)
+	if scanner.Scan() {
+		err = json.Unmarshal(scanner.Bytes(), &resp)
+		return resp, err
+	}
+	return resp, fmt.Errorf("no response from scheduler")
 }
 
 func (c *IPCClient) SendEvent(status, message string, progress int) {
@@ -147,7 +178,7 @@ mitmPool, err := pgxpool.New(ctx, mitmDSN)
 
 ### Step 2: Unwrap storage DEK using KEK
 
-Read the KEK from the `MASTER_KEY` environment variable. Query the database to retrieve the wrapped DEK and the encrypted source credentials:
+Fetch the KEK (`MASTER_KEY`) via IPC from the scheduler (or from the environment for local debugging). Query the database to retrieve the wrapped DEK and the encrypted source credentials:
 
 ```go
 // 1. Fetch encrypted config and KEK/DEK parameters

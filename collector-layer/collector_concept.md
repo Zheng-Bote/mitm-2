@@ -7,7 +7,7 @@ To ensure security and compliance (GDPR/PII), all sensitive data is protected us
 
 ## Security Architecture: Envelope Encryption
 Following the project's security standards, we use a two-tier key hierarchy:
-1.  **Master Key (KEK):** Resides only in the RAM of the Go processes (provided via environment variables). It is never persisted.
+1.  **Master Key (KEK):** Resides only in the RAM of the Go processes (requested dynamically via IPC Socket from the Scheduler). It is never persisted.
 2.  **Data Encryption Keys (DEKs):** Unique keys generated for data encryption. These are stored in the database but are "wrapped" (encrypted) by the KEK.
 
 ## Database Schema
@@ -85,7 +85,7 @@ CREATE INDEX idx_raw_pending_topics ON raw_ingestion (topic, status) WHERE statu
 ## Workflow
 
 ### Collector Process
-1.  **Initialize:** Load Master Key (KEK) from environment.
+1.  **Initialize:** Connect to Scheduler IPC socket to fetch database credentials and Master Key (KEK).
 2.  **Fetch Credentials:** 
     *   Query `source_credentials` for the specific `source_name`.
     *   Retrieve the referenced `wrapped_key` from `storage_keys`.

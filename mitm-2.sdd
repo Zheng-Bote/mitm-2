@@ -1,0 +1,19 @@
+Spec: MitM Data Aggregator
+
+Purpose:
+  Provision of a reliable, secure, and decoupled system that collects data from various source systems, buffers it, aggregates it daily into JSON packages, and transmits it via a REST interface to a target SaaS solution.
+
+Platform: Go/Linux
+
+Owns:
+  ./**
+
+Must:
+  All PII (Personally Identifiable Information) data is encrypted at-rest using Envelope Encryption (AES-GCM).
+  The Master Key (KEK) is never persisted to disk.
+  Child processes (collectors, deliverers, etc.) dynamically fetch the KEK and DB credentials via the IPC Unix Socket from the Scheduler.
+  Each layer component is compiled as an independent Go binary with its own go.mod.
+  Progress and cursors are tracked strictly in PostgreSQL.
+  Child processes communicate status and audit events back to the scheduler via a nil-safe IPC socket.
+  All code documentation and comments are in English.
+  Every source file includes a standardized SPDX header (C++ style block comment) with Apache-2.0 license.
