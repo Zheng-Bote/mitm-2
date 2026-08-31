@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Kafka Offset Safety**: Implemented transactional PostgreSQL boundaries in the Kafka collector, strictly enforcing that `CommitMessages()` is skipped if any PostgreSQL partial failure occurs.
 - **Administrative RBAC Authorization**: Upgraded scheduler HTTP endpoints (e.g., `handleGetOsUserRoles`, `handleDLQ`) to use `requireAdmin(w, r)`, blocking unauthenticated or unprivileged access to administrative functionality.
 - **Frontend Security**: Fixed use-after-free pointer risks in asynchronous update checks via Qt Smart Pointers (`QPointer`) and removed hardcoded fallback authentication tokens.
+- **Frontend Security Roadmap (SpecDD)**: Extended `admin-frontend.sdd` with tasks #3–#12 covering OS input sanitization against path traversal, a centralized API client for uniform HTTP status/error handling, secure secret memory wiping, proxy credential hardening, role validation before sensitive UI actions, dependency pinning (QXlsx), CTest/CI pipelines, SBOM lockfiles with vulnerability scanning, and consolidated secret management.
+- **Database**: Added the missing delivery migrations `006_fix_dlq_fk.sql` (removes the `ON DELETE SET NULL` foreign key from `dead_letter_queue`) and `007_adapter_tokens.sql` (new `adapter_tokens` table) to the central `migrations/setup.sql`.
+- **Documentation**: Added `delivery-layer/docs/dlq_requeue_flow.md` describing the architectural DLQ requeue flow across Admin Frontend, Scheduler, and Delivery Layer, including its atomic PostgreSQL transaction (Scenario A package update / Scenario B package recovery).
 
 ## [MVP-2.9.0] - 2026-08-29
 
