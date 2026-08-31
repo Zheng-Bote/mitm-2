@@ -706,3 +706,53 @@ CREATE TABLE IF NOT EXISTS topic_dependencies (
 COMMENT ON TABLE topic_dependencies IS 'Defines which source systems are required before a topic can be aggregated.';
 
 
+
+-- ==========================================
+-- Source: delivery-layer/migrations/006_fix_dlq_fk.sql
+-- ==========================================
+/**
+ * SPDX-FileComment: Delivery Layer Database Migrations
+ * SPDX-FileType: SOURCE
+ * SPDX-FileContributor: ZHENG Robert
+ * SPDX-FileCopyrightText: 2026 ZHENG Robert
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * @file 006_fix_dlq_fk.sql
+ * @brief Migration script to remove ON DELETE SET NULL foreign key from dead_letter_queue.
+ * @version 1.0.0
+ * @date 2026-08-09
+ *
+ * @author ZHENG Robert (robert @hase-zheng.net)
+ * @copyright Copyright (c) 2026 ZHENG Robert
+ * @license Apache-2.0
+ */
+
+ALTER TABLE dead_letter_queue DROP CONSTRAINT IF EXISTS dead_letter_queue_package_id_fkey;
+
+
+-- ==========================================
+-- Source: delivery-layer/migrations/007_adapter_tokens.sql
+-- ==========================================
+/**
+ * SPDX-FileComment: MitM Aggregator Adapter Tokens
+ * SPDX-FileType: SOURCE
+ * SPDX-FileContributor: Antigravity
+ * SPDX-FileCopyrightText: 2026 Antigravity
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * @file 007_adapter_tokens.sql
+ * @brief Migration script creating adapter_tokens table.
+ *
+ * @LICENSE Apache-2.0
+ */
+
+CREATE TABLE IF NOT EXISTS adapter_tokens (
+    connection_hash VARCHAR(64) PRIMARY KEY, -- e.g. SHA-256 of endpoint + login
+    access_token    TEXT NOT NULL,
+    access_expiry   TIMESTAMPTZ,
+    refresh_token   TEXT,
+    refresh_expiry  TIMESTAMPTZ,
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+COMMENT ON TABLE adapter_tokens IS 'Stores central authentication tokens (OAuth2) across multiple topics for the same adapter endpoint.';
