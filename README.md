@@ -15,6 +15,7 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 
 - [Project Overview](#project-overview)
 - [Architecture & Core Components](#architecture-core-components)
+  - [Key Architectural Principles](#key-architectural-principles)
 - [Technologies Used](#technologies-used)
 - [Getting Started / First Steps for Execution](#getting-started-first-steps-for-execution)
 - [Conclusion of the MitM-Project](#conclusion-of-the-mitm-project)
