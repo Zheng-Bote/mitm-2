@@ -17,3 +17,6 @@ Must:
   Child processes communicate status and audit events back to the scheduler via a nil-safe IPC socket.
   All code documentation and comments are in English.
   Every source file includes a standardized SPDX header (C++ style block comment) with Apache-2.0 license.
+
+References:
+  ./docs/SpecDD_SpecKit_Integration_EN.md
