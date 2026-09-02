@@ -11,7 +11,11 @@ References:
 Owns:
   ./**
 
+Depends on:
+  /admin/dashboard/stats
+
 Must:
+  Display DB information and DLQ cursor count on the dashboard (Issue #4).
   Avoid using hardcoded fallback authentication tokens.
   Manage object lifecycles safely to avoid use-after-free conditions.
   Sanitize all OS inputs, such as environment variables, before using them in file paths.
@@ -35,3 +39,4 @@ Tasks:
   [ ] #10 Introduce dependency lockfiles (SBOM) and regular vulnerability scanning.
   [ ] #11 Add telemetry for network latencies, API error rates, and update checks.
   [ ] #12 Consolidate secret management to align with the overall MitM Scheduler strategy.
+  [x] #13 Feature: Issue #4 - Fetch and display dashboard stats from /admin/dashboard/stats

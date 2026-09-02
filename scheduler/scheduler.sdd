@@ -18,5 +18,9 @@ Must:
   Handle and persist `status` and `audit` events received via IPC from child processes.
   All HTTP endpoints must strictly enforce authentication, and all RBAC management endpoints must enforce administrative authorization.
 
+Exposes:
+  /admin/dashboard/stats
+
 Tasks:
   [x] #1 Enforce authentication and administrative authorization on all RBAC management endpoints, including /admin/rbac/os_user_roles.
+  [x] #2 Feature: Issue #4 - Expose /admin/dashboard/stats returning DB info and DLQ count
