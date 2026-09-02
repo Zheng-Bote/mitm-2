@@ -11,7 +11,11 @@ References:
 Owns:
   ./**
 
+Depends on:
+  /admin/dashboard/stats
+
 Must:
+  Display DB information and DLQ cursor count on the dashboard (Issue #4).
   Avoid using hardcoded fallback authentication tokens.
   Manage object lifecycles safely to avoid use-after-free conditions.
   Sanitize all OS inputs, such as environment variables, before using them in file paths.
@@ -26,17 +30,13 @@ Tasks:
   [x] #1 Remove the hardcoded fallback token in ConfigManager::GetAuthHeader.
   [x] #2 Fix the use-after-free risk in the update thread of the About dialog (MainWindow.cpp).
   [x] #3 Sanitize OS Username (USER/USERNAME) in configuration file paths to prevent path traversal.
-  [x] #4 Introduce a common API client module to uniformly handle HTTP status codes, schemas, timeouts, and error responses.
-  [x] #5 Implement secure memory wiping (e.g., sodium_memzero) for password and proxy buffers to reduce secret lifetime.
-  [x] #6 Refactor proxy credential handling to avoid plain text URL strings and reject unauthenticated dummy credentials.
-  [x] #7 Validate user roles before sensitive UI actions and prompt for re-authentication on 401/403 responses.
-  [x] #8 Pin the QXlsx dependency in CMake to a verified release tag or commit hash instead of tracking the master branch.
-  [x] #9 Setup CTest and Continuous Integration (CI) pipelines for core components (crypto, config, roles).
-  [x] #10 Introduce dependency lockfiles (SBOM) and regular vulnerability scanning.
-  [x] #11 Add telemetry for network latencies, API error rates, and update checks.
-  [x] #12 Consolidate secret management to align with the overall MitM Scheduler strategy. (Skipped per user request - maintaining current implementation)
-  [x] #13 Update the C++ standard in CMakeLists.txt to C++26.
-  [x] #14 Increase cmake_minimum_required in CMakeLists.txt to at least 3.25.
-  [x] #15 Run a local CMake configure and build step to verify compiler compatibility.
-  [x] #16 Migrate the remaining 6 widgets to the new ApiClient.
-  [x] #17 Fix semantic version comparison in update checker so older versions aren't flagged as updates.
+  [ ] #4 Introduce a common API client module to uniformly handle HTTP status codes, schemas, timeouts, and error responses.
+  [ ] #5 Implement secure memory wiping (e.g., sodium_memzero) for password and proxy buffers to reduce secret lifetime.
+  [ ] #6 Refactor proxy credential handling to avoid plain text URL strings and reject unauthenticated dummy credentials.
+  [ ] #7 Validate user roles before sensitive UI actions and prompt for re-authentication on 401/403 responses.
+  [ ] #8 Pin the QXlsx dependency in CMake to a verified release tag or commit hash instead of tracking the master branch.
+  [ ] #9 Setup CTest and Continuous Integration (CI) pipelines for core components (crypto, config, roles).
+  [ ] #10 Introduce dependency lockfiles (SBOM) and regular vulnerability scanning.
+  [ ] #11 Add telemetry for network latencies, API error rates, and update checks.
+  [ ] #12 Consolidate secret management to align with the overall MitM Scheduler strategy.
+  [x] #13 Feature: Issue #4 - Fetch and display dashboard stats from /admin/dashboard/stats
