@@ -1,0 +1,41 @@
+Spec: Feature Issue 1 - SBOM for each Component
+
+Purpose:
+  Generate an SBOM (a combination of SPDX and CycloneDX) for all the components in the layers:
+  collector-layer, delivery-layer, maintenance-layer, and scheduler.
+  The SBOMs must be placed in the respective `<Component Repository>/docs` folder.
+
+Platform: Go/Linux
+
+References:
+  ../../../mitm-2.sdd
+
+Owns:
+  ./**
+
+Can modify:
+  /collector-layer/**
+  /delivery-layer/**
+  /maintenance-layer/**
+  /scheduler/**
+  /transformation-layer/**
+
+Must:
+  Respect the global `mitm-2` constraints defined in `.sdd` files.
+  Maintain layered architecture, envelope encryption for PII, core PostgreSQL schemas, SPDX headers, English documentation, and independent `go.mod` per layer.
+
+Tasks:
+  [x] #1 Generate SBOM (SPDX and CycloneDX) for collector-layer/mitm_collector_csv-xls
+  [x] #2 Generate SBOM (SPDX and CycloneDX) for collector-layer/mitm_collector_employee_ora
+  [x] #3 Generate SBOM (SPDX and CycloneDX) for collector-layer/mitm_collector_employee_pg
+  [x] #4 Generate SBOM (SPDX and CycloneDX) for collector-layer/mitm_collector_kafka
+  [x] #5 Generate SBOM (SPDX and CycloneDX) for collector-layer/mitm_collector_ora
+  [x] #6 Generate SBOM (SPDX and CycloneDX) for collector-layer/mitm_collector_pg
+  [x] #7 Generate SBOM (SPDX and CycloneDX) for delivery-layer/mitm_delivery
+  [x] #8 Generate SBOM (SPDX and CycloneDX) for maintenance-layer/mitm_cleanup
+  [x] #9 Generate SBOM (SPDX and CycloneDX) for scheduler/mitm_scheduler
+  [x] #10 Generate SBOM (SPDX and CycloneDX) for transformation-layer/mitm_transformation
+  [x] #11 Update CHANGELOG.md for the affected components if required
+
+Done when:
+  SBOM with Licenses and Dependencies created for each component.
