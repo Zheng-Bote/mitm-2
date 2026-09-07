@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [MVP-2.11.0] - 2026-09-05
+
+### Added
+- **SBOM Generation**: Added `syft` generated SBOM files (SPDX and CycloneDX) for all components in the collector, delivery, maintenance, scheduler, and transformation layers to their respective `docs/` directories (Issue #1).
+
 ## [MVP-2.10.0] - 2026-08-31
 
 ### Added / Changed

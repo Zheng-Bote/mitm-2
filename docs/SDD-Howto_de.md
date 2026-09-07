@@ -6,46 +6,48 @@ Dieser Guide erklärt dir, wie du als Entwickler oder KI-Agent damit im Alltag a
 ## Warum zwei Frameworks?
 
 - **SpecDD (`.sdd` Dateien):** Ist das "Grundgesetz" des Projekts. Es definiert Architektur-Schichten, harte Security-Vorgaben (wie Verschlüsselung) und Modulgrenzen. Es ändert sich selten.
-- **GitHub Spec Kit (Markdown-Features):** Ist der "Arbeitsauftrag". Wenn du etwas Neues bauen willst (z.B. einen API-Endpunkt), schreibst du ein Spec Kit Dokument. Es ändert sich schnell und ist iterativ.
+- **GitHub Spec Kit (Flow-Forward Spec):** Ist der strukturierte "Arbeitsauftrag". Wenn du etwas Neues bauen willst, nutzen wir einen iterativen, Agenten-gesteuerten Prozess (Plan -> Tasks -> Implement -> Converge), um das Feature sicher durch alle betroffenen Repositories/Komponenten zu führen.
 
-## Der alltägliche Workflow in 3 Schritten
+## Der Flow-Forward Workflow (Agentic SDD)
+
+Da unser System aus mehreren Komponenten mit jeweils eigenen GitHub-Repos besteht (z. B. `mitm_collector_pg`, `mitm_transformation`), orchestrieren wir Feature-Entwicklungen zentral aus dem Root-Repo. Dies verhindert Architektur-Drift und unübersichtliche Pull Requests.
+
+Wir nutzen hierfür Agentic-Befehle (z. B. via Antigravity).
 
 ### 1. Rahmenbedingungen checken (SpecDD lesen)
 
-Bevor du ein Feature planst, schau in die `.sdd` Dateien in deinem Zielordner (z.B. `mitm-2.sdd`). Sie verraten dir, was du tun **darfst** und was absolut **verboten** ist (z.B. `Must not` oder `Forbids`).
+Bevor du startest, verschaffe dir einen groben Überblick über die `.sdd` Dateien (z.B. `mitm-2.sdd` im Root). Sie verraten dir, was du tun **darfst** und was absolut **verboten** ist.
 
-### 2. Feature planen (Spec Kit schreiben)
+### 2. Spezifizieren & Planen (Design-Phase)
 
-Du hast zwei Möglichkeiten, ein Feature zu planen:
+Bevor Code oder Specs geschrieben werden, wird durch den Agenten ein **Feature-Branch** (z. B. `feature/issue-42`) im betroffenen Repo erstellt.
 
-**Option A: Über GitHub Issues (Empfohlen)**
-Gehe im GitHub-Repository auf **Issues -> New Issue** und wähle das Template **"Feature Specification (Spec Kit)"**. GitHub füllt die Vorlage automatisch für dich aus. Fülle die Felder aus und bestätige über die Checkboxen, dass dein Feature die SpecDD-Regeln (Drift-Kontrolle) nicht bricht.
+**Ablageort der Spec:**
+- **Schichtübergreifende Features** werden zentral als Spec-Verzeichnis im Root-Repo unter `specs/features/<feature-name>/` angelegt.
+- **Isolierte Features**, die nur eine einzige Komponente betreffen, verbleiben zwingend in den `specs/` Ordnern der jeweiligen Komponenten-Repos (z.B. `delivery-layer/mitm_delivery/specs/...`).
 
-**Option B: Als Markdown-Datei im Projekt**
-Kopiere die Vorlage `.github/spec-kit/feature_template.md` in einen neuen Ordner `docs/features/` (z. B. `docs/features/feature_kafka_collector.md`). Beschreibe dort, was das Feature tun soll, und checke die Datei als Teil deines Feature-Branches in Git ein.
+- **`Run /speckit.specify`**: Der Agent (nachdem er den Branch erstellt hat) legt das neue Verzeichnis für dein Feature an und hilft dir, die initialen Anforderungen (Akzeptanzkriterien) zu definieren.
+- **`Run /speckit.plan`**: Der Agent analysiert die Anforderungen gegen die `.sdd`-Dateien (global und lokal) und formuliert einen Architektur-Plan. Hier wird definiert, **wie** die betroffenen Schichten miteinander interagieren (z. B. Collector liefert JSON, Transformation mapped es).
 
-Wichtig: In beiden Wegen setzt du dich explizit mit den bestehenden SpecDD-Architekturregeln auseinander!
+### 3. Aufteilung & Vorbereitung (Work Breakdown)
 
-### 3. Implementierung (Durch KI oder Entwickler)
+- **`Run /speckit.tasks`**: Der Architektur-Plan wird in konkrete Teilaufgaben übersetzt. **Wichtig für dieses Monorepo:** Die Tasks müssen explizit definieren, in welcher Sub-Komponente / welchem Repo welcher Code geändert werden muss (z. B. "Ändere Interface in `collector-layer/mitm_collector_pg`"). Die Reihenfolge ist bindend (Interfaces und Verträge zuerst).
 
-Das Issue oder die Markdown-Datei dient nun als verbindlicher Arbeitsauftrag.
+### 4. Implementierung & Konvergenz (Die iterative Loop)
 
-- **KI-Agenten (z. B. Antigravity oder Copilot):** Lesen das Spec Kit, prüfen selbstständig die verlinkten SpecDD-Architekturvorgaben (`.sdd`) und generieren den Code passgenau (inklusive SPDX-Header und Unit-Tests).
-- **Menschliche Entwickler:** Setzen die spezifizierten Tasks aus dem Spec Kit Schritt für Schritt in einem eigenen Git-Branch (`feature/...`) um.
+Dieser Schritt ersetzt den traditionellen, fehleranfälligen "Big Bang" Pull Request.
 
-### 4. Qualitätssicherung (QA) & Code Review
+- **`Run /speckit.implement`**: Der Agent bearbeitet exakt den nächsten anstehenden Task. Er ändert den Code in der entsprechenden Komponente, fügt Tests hinzu und präsentiert das Artefakt-Diff.
+- **Review:** Du prüfst als Entwickler den Code-Diff dieses Einzelschritts.
+- **`Run /speckit.converge`**: Der Agent analysiert den aktuellen Stand des Codes gegen die `specs/` und `.sdd`-Regeln. Fehlt noch etwas (z. B. Error-Handling)? Dann generiert er neue Tasks, die der Liste hinzugefügt werden.
+- **Repeat:** Wiederhole `/speckit.implement` und `/speckit.converge`, bis alle Tasks abgearbeitet und das Feature vollständig und robust ist.
 
-Sobald der Code fertig ist, wird ein Pull Request (PR) erstellt, der das GitHub Issue verlinkt (z. B. durch `Closes #42`).
-In dieser Phase wird geprüft:
+### 5. Qualitätssicherung & Abschluss
 
-- Erfüllt der Code alle "Acceptance Criteria" aus dem Spec Kit?
-- Werden die CI/CD-Pipelines grün?
-- Wurde wirklich keine SpecDD-Regel verletzt (z. B. Envelope Encryption umgangen)?
-
-### 5. Abnahme & Abschluss
-
-Sind alle Reviewer und Architektur-Hüter zufrieden, wird der Pull Request in den `main`-Branch gemerged.
-Durch das Schlüsselwort im PR wird das Spec Kit GitHub Issue automatisch **geschlossen**. Das Feature ist damit erfolgreich entwickelt, in der Architektur verankert und live!
+- **Changelog:** Im letzten Task der Implementierungs-Phase (oder in der finalen Converge-Loop) sorgt der Agent dafür, dass die `CHANGELOG.md` der betroffenen Komponenten aktualisiert wird.
+- **Push & PR:** Sobald die Converge-Loop erfolgreich ist, pusht der Agent (oder du) den Feature-Branch in das jeweilige GitHub-Repo und eröffnet dort den entsprechenden Pull Request (PR).
+- CI/CD-Pipelines prüfen abschließend die übergreifenden Integrationstests des PRs.
+- Sind alle Reviewer zufrieden, werden die Änderungen in die Hauptbranches (`main`) gemerged.
 
 ---
 
@@ -53,24 +55,19 @@ Durch das Schlüsselwort im PR wird das Spec Kit GitHub Issue automatisch **gesc
 
 ### Beispiel 1: Einen neuen Kafka-Collector hinzufügen
 
-Du möchtest, dass `mitm-2` Daten aus einem Kafka-Topic liest.
+Du möchtest, dass `mitm-2` Daten aus einem Kafka-Topic liest und verschlüsselt.
 
-- **Was sagt SpecDD?**
-  Die Root-Spec (`mitm-2.sdd`) sagt: "Alle PII Daten müssen sofort per AES-GCM verschlüsselt werden. Der Master Key kommt per IPC-Socket."
-- **Wie sieht dein Spec Kit aus?**
-  Du schreibst ein Dokument `feature_kafka_collector.md`. Darin steht: "Der Collector liest Topic X. Für die PII-Felder `email` und `ssn` fordert er den KEK via IPC an und verschlüsselt sie."
-- **Ergebnis:** Das Feature passt perfekt in die Architektur. Niemand hat aus Versehen einen Hardcoded-Key benutzt.
+1. **Plan & Specify:** Du nutzt `/speckit.specify` für `feature_kafka_collector`. Der `/speckit.plan` erkennt durch `mitm-2.sdd` sofort: "PII muss per AES-GCM verschlüsselt werden. Master Key via IPC."
+2. **Tasks:** `/speckit.tasks` zerlegt dies: Task 1 (Kafka Reader bauen in `collector-layer/mitm_collector_kafka`), Task 2 (IPC Encryption im Collector einbinden).
+3. **Implement:** Der Agent baut Schritt für Schritt den Code in den richtigen Repos, ohne aus Versehen Hardcoded-Keys einzubauen, da die Tasks ihn an die Spec binden.
 
-### Beispiel 2: Ein neues JSON-Mapping für die Transformation-Layer
+### Beispiel 2: Ein neues JSON-Mapping (Schichtübergreifend)
 
-Du sollst neue Felder aus einem CSV-Upload in das interne JSON-Format mappen.
+Du sollst neue Felder aus einem CSV-Upload verarbeiten.
 
-- **Was sagt SpecDD?**
-  Die Spec sagt: "Die Transformation-Layer ist zustandslos und darf nicht direkt in die Datenbank schreiben."
-- **Wie sieht dein Spec Kit aus?**
-  Du schreibst `feature_employee_mapping_v2.md`. Darin beschreibst du die Mapping-Logik.
-- **Ergebnis:** Der Entwickler / KI-Agent baut nur reine Go-Funktionen ohne Datenbank-Importe. Die Architektur bleibt sauber.
+1. **Tasks:** `/speckit.tasks` generiert: Task 1 für `collector-layer/mitm_collector_csv-xls` (Datenfelder einlesen), Task 2 für `transformation-layer/mitm_transformation` (Mapping-Regeln ohne direkte Datenbankaufrufe).
+2. **Converge:** Wenn der Agent bei der Implementierung von Task 1 das Output-Format anpasst, erkennt `/speckit.converge` sofort, dass Task 2 entsprechend aktualisiert werden muss. Die Architektur bleibt über Repo-Grenzen hinweg konsistent.
 
 ---
 
-Mit diesem Ansatz bleibt das `mitm-2` System auch bei vielen neuen Features immer wartbar, sicher und architektonisch sauber!
+Mit diesem Flow-Forward Ansatz bleibt das `mitm-2` System auch bei komplexen, schichtübergreifenden Features immer wartbar, sicher und architektonisch sauber!
