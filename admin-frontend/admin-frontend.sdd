@@ -48,3 +48,4 @@ Tasks:
   [x] Github Issue #6: Fix empty export report by fetching full API data for the chosen date range instead of relying on the filtered model.
   [x] Github Issue #7: Desktop-UI clean-up, move settings tabs under a new "System / Settings" tab.
   [x] Github Issue #6: Feature: Implement Settings Key Vault (Store MASTER_KEY securely in memory, add lock/unlock UI)
+  [x] Github Issue #7: Feature: Native Key Rotation and Frontend Management UI
