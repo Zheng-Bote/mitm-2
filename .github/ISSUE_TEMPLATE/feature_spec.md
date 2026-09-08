@@ -22,3 +22,4 @@ Please confirm that this feature respects the global `mitm-2` constraints define
 ## Acceptance Criteria
 - [ ] Criterion 1
 - [ ] Criterion 2
+- [ ] CHANGELOG.md and README.md are up-to-date
