@@ -11,7 +11,16 @@
 - Communicates via Unix Domain Sockets for IPC logging and scheduler orchestration.
 
 ## Configuration
-Requires `MITM_DB_CONFIG_JSON` or individual `MITM_DB_*` environment variables for connection. Invoked by the `mitm_scheduler` with JSON arguments to configure topics and table targets.
+
+### Database Configuration & Credentials
+
+The component expects database credentials and the encryption master key to be injected at runtime. The resolution order is:
+
+1. **IPC Scheduler Connection (Preferred):** If invoked by the `mitm_scheduler`, the component dynamically fetches the PostgreSQL credentials and `MASTER_KEY` via a Unix Domain Socket (IPC).
+2. **JSON Config (Fallback):** Setting the `MITM_DB_CONFIG_JSON` environment variable containing a JSON string with a nested `"db"` object.
+3. **Direct Environment Variables (Fallback):** Setting `MITM_DB_HOST`, `MITM_DB_PORT`, `MITM_DB_USER`, `MITM_DB_PASSWORD`, `MITM_DB_NAME`, and `MASTER_KEY` directly.
+
+Invoked by the `mitm_scheduler` with JSON arguments to configure topics and table targets.
 
 ### Scheduler Parameters (JSON Arguments)
 When the `mitm_scheduler` executes this collector, it passes a JSON configuration string as the first command-line argument (`os.Args[1]`). 

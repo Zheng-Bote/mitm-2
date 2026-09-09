@@ -14,6 +14,15 @@ The cleanup job is meant to be scheduled by the `mitm_scheduler` but can be run 
 
 ### Environment Variables
 
+### Database Configuration & Credentials
+
+The component expects database credentials and the encryption master key to be injected at runtime. The resolution order is:
+
+1. **IPC Scheduler Connection (Preferred):** If invoked by the `mitm_scheduler`, the component dynamically fetches the PostgreSQL credentials and `MASTER_KEY` via a Unix Domain Socket (IPC).
+2. **JSON Config (Fallback):** Setting the `MITM_DB_CONFIG_JSON` environment variable containing a JSON string with a nested `"db"` object.
+3. **Direct Environment Variables (Fallback):** Setting `MITM_DB_HOST`, `MITM_DB_PORT`, `MITM_DB_USER`, `MITM_DB_PASSWORD`, `MITM_DB_NAME`, and `MASTER_KEY` directly.
+
+
 Like all other workers, it expects database credentials to be injected. The preferred method is via the `MITM_DB_CONFIG_JSON` environment variable, which contains a JSON string with a nested `"db"` object:
 
 ```json
