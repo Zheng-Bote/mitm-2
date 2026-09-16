@@ -1,0 +1,26 @@
+--- collector-layer/mitm_collector_employee-de_ora/main.go
++++ collector-layer/mitm_collector_employee-de_ora/main.go
+@@ -510,14 +510,14 @@
+ 		COALESCE(ta_o.orgid, o.orgid)                 AS orgid, 
+ 		COALESCE(ta_o.short, o.short)                 AS short, 
+ 		COALESCE(ta_o.parent_org_id, o.parent_org_id) AS parent_org_id,
+-		CASE WHEN ta."PERNR" IS NOT NULL THEN '' ELSE e.supervisor END AS supervisor,
++		CASE WHEN ta.pernr IS NOT NULL THEN NULL ELSE e.supervisor END AS supervisor,
+ 		COALESCE(ta_o.short, e.departmentcode)        AS departmentcode,
+-		COALESCE(ta."COSTCENTER", e.costcenter)       AS costcenter,
+-		COALESCE(ta."PERSONELLAREA", e.personellarea) AS personellarea,
+-		COALESCE(ta."COMPANYCODE", e.companycode)     AS companycode
++		COALESCE(ta.costcenter, e.costcenter)       AS costcenter,
++		COALESCE(ta.personellarea, e.personellarea) AS personellarea,
++		COALESCE(ta.companycode, e.companycode)     AS companycode
+ 	FROM %s e
+ 	LEFT JOIN org o ON e.departmentcode = o.short
+-	LEFT JOIN temp_assignment ta 
+-		ON e.pernr = ta."PERNR" 
+-		AND TO_DATE(ta."ENDDATE", 'DD.MM.YY') >= TRUNC(SYSDATE) 
++	LEFT JOIN tmp_assignment ta 
++		ON e.pernr = ta.pernr 
++		AND TO_DATE(ta.enddate, 'DD.MM.YY') >= TRUNC(SYSDATE) 
+ 		AND e.companycode IN ('A1', 'DE')
+-	LEFT JOIN org ta_o ON ta."ORGID" = ta_o.orgid`
++	LEFT JOIN org ta_o ON ta.orgid = ta_o.orgid`
