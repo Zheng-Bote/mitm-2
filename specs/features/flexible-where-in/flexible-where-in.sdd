@@ -1,0 +1,26 @@
+Spec: Flexible DB Where In Feature
+
+Purpose:
+  Replace hardcoded or single-field JSON arguments (like 'companycode') with a flexible 'db_where_in' JSON structure for dynamic SELECT query generation in Oracle and PostgreSQL collectors.
+
+Platform: Go/Linux
+
+References:
+  ../../../collector-layer/collector-layer.sdd
+
+Can modify:
+  ../../../collector-layer/mitm_collector_employee-de_ora/main.go
+  ../../../collector-layer/mitm_collector_employee_ora/main.go
+  ../../../collector-layer/mitm_collector_ora/main.go
+  ../../../collector-layer/mitm_collector_pg/main.go
+
+Must:
+  The CollectorArgs structure must parse `db_where_in` as a key-value mapping where keys are column names and values are arrays of strings.
+  Column names specified in `db_where_in` must be strictly validated against the `identifierRegex` to prevent SQL injection.
+  The values must be passed as parameterized query arguments (bind variables) to the database driver.
+
+Tasks:
+  [x] #1 Update mitm_collector_employee_ora to use `db_where_in` instead of `companycode`.
+  [x] #2 Update mitm_collector_employee-de_ora to use `db_where_in` dynamically instead of hardcoded `AND e.companycode IN ('A1', 'DE')`.
+  [x] #3 Add `db_where_in` support to mitm_collector_ora.
+  [x] #4 Add `db_where_in` support to mitm_collector_pg.
