@@ -13,26 +13,27 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 <details>
 <summary>Table of Contents</summary>
 
-- [Project Overview](#project-overview)
-- [Architecture & Core Components](#architecture-core-components)
-  - [Key Architectural Principles](#key-architectural-principles)
-- [Technologies Used](#technologies-used)
-- [Getting Started / First Steps for Execution](#getting-started-first-steps-for-execution)
-- [Conclusion of the MitM-Project](#conclusion-of-the-mitm-project)
-- [🏗️ C4 System & Component Context](#-c4-system-component-context)
-- [📂 Project Structure & Layers](#-project-structure-layers)
-  - [1. MitM Scheduler](#1-mitm-scheduler)
-  - [2. Collector Layer](#2-collector-layer)
-  - [3. Transformation Layer](#3-transformation-layer)
-  - [4. Delivery Layer](#4-delivery-layer)
-  - [5. Admin Frontend](#5-admin-frontend)
-  - [6. Maintenance Layer](#6-maintenance-layer)
-- [🔒 Security & Key Management](#-security-key-management)
-- [🛠️ Build and Running Instructions](#-build-and-running-instructions)
-  - [1. Prerequisites](#1-prerequisites)
-  - [2. Database Migrations](#2-database-migrations)
-  - [3. Compiling the Components](#3-compiling-the-components)
-  - [4. Running the Pipeline (End-to-End Test)](#4-running-the-pipeline-end-to-end-test)
+- [Man-in-the-Middle (MitM) Data Aggregator](#man-in-the-middle-mitm-data-aggregator)
+  - [Project Overview](#project-overview)
+  - [Architecture \& Core Components](#architecture--core-components)
+    - [Key Architectural Principles](#key-architectural-principles)
+  - [Technologies Used](#technologies-used)
+  - [Getting Started / First Steps for Execution](#getting-started--first-steps-for-execution)
+  - [Conclusion of the MitM-Project](#conclusion-of-the-mitm-project)
+  - [🏗️ C4 System \& Component Context](#️-c4-system--component-context)
+  - [📂 Project Structure \& Layers](#-project-structure--layers)
+    - [1. MitM Scheduler](#1-mitm-scheduler)
+    - [2. Collector Layer](#2-collector-layer)
+    - [3. Transformation Layer](#3-transformation-layer)
+    - [4. Delivery Layer](#4-delivery-layer)
+    - [5. Admin Frontend](#5-admin-frontend)
+    - [6. Maintenance Layer](#6-maintenance-layer)
+  - [🔒 Security \& Key Management](#-security--key-management)
+  - [🛠️ Build and Running Instructions](#️-build-and-running-instructions)
+    - [1. Prerequisites](#1-prerequisites)
+    - [2. Database Migrations](#2-database-migrations)
+    - [3. Compiling the Components](#3-compiling-the-components)
+    - [4. Running the Pipeline (End-to-End Test)](#4-running-the-pipeline-end-to-end-test)
 
 </details>
 
@@ -87,43 +88,45 @@ The diagram below shows how the system boundaries are structured and how the com
 
 ```mermaid
 flowchart TB
-    admin[/"Person: Administrator<br/>(Monitors system logs, cursors, and DLQ)"/]
+    admin[/"<b>Person: Administrator</b><br/>(Desktop-/Web-Interface)"/]
+    mta[/"<b>Automate: Medical Devices</b><br/>(Desktop-Client)"/]
 
     subgraph system ["System Boundary: MitM Data Aggregator"]
-        scheduler["mitm_scheduler<br/>(Go Orchestration Engine)"]
-        collector["Collector-Layer<br/>(Standalone Collectors)"]
-        transformer["Transformation-Layer<br/>(Mapping & Validation Engine)"]
-        delivery["Delivery-Layer<br/>(Packaging & Delivery Sender)"]
-        maintenance["Maintenance-Layer<br/>(Data Retention & Clean-Up)"]
-        db[("PostgreSQL Storage<br/>(State, Raw, Target, Config, & DLQ)")]
+        core["<b>Core-Layer</b><br/>HTTP, IAM, Scheduler<br/>(Standalone Components)"]
+        collector["<b>Collector-Layer</b><br/>Collect Data From Sources<br/>(Standalone Components)"]
+        transformer["<b>Transformation-Layer</b><br/>Mapping, Transformation & Validation<br/>(Standalone Components)"]
+        maintenance["<b>Maintenance-Layer</b><br/>Data Retention & Clean-Up<br/>(Standalone Components)"]
+        delivery["<b>Delivery-Layer</b><br/>Packaging & Delivery<br/>(Standalone Components)"]
+        storage[("<b>Storage-Layer</b><br/>PostgreSQL<br/>(State, Config, DLQ, ...)<br/>Filesystem<br/>(medical data chunks, ...)")]
     end
 
-    sources[/"External Systems:<br/>Data Sources<br/>(Databases, CSV/Excel, JSON, REST APIs, Kafka, MFT, ...)"/]
-    saas[/"External System (Target):<br/>Apigee or SaaS Platform<br/>(Accepts daily JSON packages)"/]
+    sources[/"<b>External Systems</b><br/>Data Sources<br/>(Databases, CSV/Excel/JSON, REST APIs, Kafka, MFT, ...)"/]
+    saas[/"<b>External System</b><br/>Targets<br/>(Apigee or SaaS Platform, e.g. Cority, EHS Platform, ...)"/]
 
-    admin -->|Manages configuration & logs| scheduler
-    scheduler -->|Triggers & controls| collector
-    scheduler -->|Triggers transformation| transformer
-    scheduler -->|Triggers packaging & delivery| delivery
-    scheduler -->|Triggers cleanup| maintenance
+    admin -->|Manages configuration & DLQ, creates reports| core
+    mta -->|collect & sends medical data| core
+    core -->|Triggers collector| collector
+    core -->|Triggers transformation| transformer
+    core -->|Triggers cleanup| maintenance
+    core -->|Triggers delivery| delivery
 
     collector -->|Fetches raw data| sources
-    collector -->|Saves raw encrypted data| db
+    collector -->|Saves raw encrypted data| storage
 
-    transformer -->|Reads raw & writes validated records| db
+    transformer -->|Reads raw & writes validated records| storage
 
-    delivery -->|Reads validated records & writes packages| db
-    delivery -->|Delivers packages via HTTPS POST| saas
+    delivery -->|Reads validated records & writes packages| storage
+    delivery -->|Delivers packages| saas
 
-    maintenance -->|Purges old logs & fragments| db
+    maintenance -->|Purges old records & files| storage
 
     classDef system fill:#1168bd,stroke:#0b4c8c,color:#fff;
     classDef external fill:#999999,stroke:#666666,color:#fff;
     classDef actor fill:#08427b,stroke:#052e56,color:#fff;
 
-    class scheduler,collector,transformer,delivery,db system;
+    class collector,transformer,delivery system;
     class sources,saas external;
-    class admin actor;
+    class admin,mta actor;
 ```
 
 ---
@@ -230,7 +233,7 @@ go build -o ../../bin/mitm-collector-pg-employee main.go
 
 ### 4. Running the Pipeline (End-to-End Test)
 
-To verify the entire chain locally, we provide a complete End-to-End Orchestration script. 
+To verify the entire chain locally, we provide a complete End-to-End Orchestration script.
 It spins up a mock SaaS server, initializes database data, and runs the Collector, Transformation, and Delivery layers consecutively:
 
 ```bash
