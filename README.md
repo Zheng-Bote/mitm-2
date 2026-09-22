@@ -48,7 +48,7 @@ The project places high value on data security and the protection of personally 
 
 The system is divided into modularly decoupled layers that operate according to the "single responsibility" principle and are orchestrated by a central scheduler:
 
-1. **Scheduler (`scheduler/mitm_scheduler`)**: The control instance of the system. It orchestrates the execution of collectors and delivery jobs based on dynamic cron schedules and provides a REST API.
+1. **Core Layer (`core-layer/`)**: The control instance of the system. The HTTP-Core acts as an ECS Supervisor (PID 1), orchestrating the internal `mitm_iam` and `mitm_scheduler` microservices. The Scheduler orchestrates collector and delivery jobs while strictly isolating cryptographic Master Keys from the web tier via Zero-Trust IPC sockets.
 2. **Collector Layer (`collector-layer/`)**: Independent collectors (e.g., `mitm_collector_pg`, `mitm_collector_ora`) that connect to source systems, retrieve raw data via cursors (state tracking), initially encrypt it, and store it as fragments.
 3. **Transformation Layer (`transformation-layer/`)**: Reads the raw data, waits until all required source fragments for a `correlation_id` arrive, decrypts them, merges them into a Golden Record, applies dynamic mapping and validation rules, and stores the result for delivery.
 4. **Delivery Layer (`delivery-layer/`)**: Bundles the validated records into daily JSON packages and securely sends them via HTTPS POST (including idempotency keys) to the target system. In case of errors, exponential backoff and a Dead Letter Queue (DLQ) are utilized.
@@ -91,7 +91,7 @@ flowchart TB
     mta[/"<b>Automate: Medical Devices</b><br/>(Desktop-Client)"/]
 
     subgraph system ["System Boundary: MitM Data Aggregator"]
-        core["<b>Core-Layer</b><br/>HTTP, IAM, Scheduler<br/>(Standalone Components)"]
+        core["<b>Core-Layer</b><br/>HTTP, IAM, Scheduler<br/>(Supervised Components)"]
         collector["<b>Collector-Layer</b><br/>Collect Data From Sources<br/>(Standalone Components)"]
         transformer["<b>Transformation-Layer</b><br/>Mapping, Transformation & Validation<br/>(Standalone Components)"]
         maintenance["<b>Maintenance-Layer</b><br/>Data Retention & Clean-Up<br/>(Standalone Components)"]

@@ -6,8 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [MVP-2.11.0] - 2026-09-05
+## [MVP-2.12.0] - 2026-09-22
 
+### Added / Changed
+- **ECS Supervisor Engine**: Refactored `mitm-core-http` to act as PID 1, automatically orchestrating `mitm-core-iam` and `mitm-core-scheduler` as child processes, including SIGTERM propagation and health-monitoring for unified AWS ECS deployments.
+- **Zero-Trust Memory Isolation**: Stripped the `MASTER_KEY` environment variable entirely from the HTTP-Core memory footprint. Cryptographic operations and Database credential decryption are now exclusively handled by the Scheduler.
+- **IPC Crypto Delegation**: Expanded Unix Domain Socket IPC protocols to securely tunnel `CryptoEncrypt` and `CryptoDecrypt` operations between the HTTP-Core API and the Scheduler vault without exposing DEKs to the web tier.
+- **Dynamic Startup Flow**: Rewrote the HTTP listener initialization to dynamically bind to the specific port and TLS certificate settings *after* fetching the secure configuration from the Scheduler vault.
+- **Path Resolution Resiliency**: Fixed dynamic relative path resolution across all Rust microservices to reliably resolve binaries, certs, and uploads from the deployment `bin/` or parent directory.
+
+## [MVP-2.11.0] - 2026-09-05
 ### Added
 - **SBOM Generation**: Added `syft` generated SBOM files (SPDX and CycloneDX) for all components in the collector, delivery, maintenance, scheduler, and transformation layers to their respective `docs/` directories (Issue #1).
 
