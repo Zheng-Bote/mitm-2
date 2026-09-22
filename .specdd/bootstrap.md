@@ -76,6 +76,7 @@ When making changes:
 - Work only within local authority.
 - Implement the smallest correct change.
 - Keep changed files, artifacts, checks, tasks, specs, and other relevant assets aligned.
+- always work with branches
 
 If any instruction conflicts with your default coding habits or assumptions, follow SpecDD. Do not treat examples,
 conventions, nearby files, or familiar project patterns as permission to ignore the active spec chain.
@@ -1154,3 +1155,103 @@ When working in a SpecDD project:
 - Keep specs and changed assets aligned.
 
 Specs are the project's durable prompt. Follow them.
+
+---
+
+## MitM-2 Project Overview
+
+The **MitM Data Aggregator** is a layered system designed to securely and reliably collect data from various source systems (CSV, APIs, SQL), buffer it locally, and aggregate it into JSON packages for daily delivery to a target SaaS platform via REST API.
+
+**Key Technologies & Languages:**
+
+- **Rust:** Core components, as well as security- or performance-critical components.
+- **Go:** Collector-layer, delivery-layer, and maintenance-layer.
+- **Qt6 / C++26:** Desktop Client Frontends.
+- **Angular:** Web Frontends.
+- **Storage:** PostgreSQL (central database layer for state management and fragment buffering).
+- **Security:** Envelope Encryption (AES-GCM) for PII data protection at rest. The MasterKey (KEK) is never persisted to disk; it is kept in RAM and fetched dynamically by child processes via IPC Unix Socket. Individual DEKs are in the DB.
+- **Security:** Argon2id for passwords.
+- **Pattern:** Layered architecture (Collector, Transformation, Delivery, Maintenance) orchestrated by Core (HTTP, IAM, Scheduler).
+
+## Building and Running
+
+Each layer component is compiled as an independent binary (static Go binaries, static Rust binaries) with its own module definition (e.g., `go.mod`).
+
+### Commands (Examples per Layer)
+
+- **Build Go Layer:** `cd collector-layer/mitm_collector_pg && go build -o bin/mitm_collector_pg`
+- **Test Go Layer:** `cd collector-layer/mitm_collector_pg && go test ./...`
+- **Run Sub-process:** _Do not pass the Master Key via environment variables._ The Key Encryption Key (KEK) is fetched dynamically via the IPC Unix Socket from the Core process.
+- **Monitoring:**
+  - Metrics: `curl http://localhost:8080/metrics`
+  - Health: `curl http://localhost:8080/healthz`
+  - Ready: `curl http://localhost:8080/readyz`
+
+## Key Files & Directories
+
+### Project Structure: Monorepo with independent component repositories:
+
+```tree
+mitm-2
+├── admin-frontend
+│   ├── mitm_fe_cpp
+│   └── mitm_fe_web
+├── core-layer
+│   ├── mitm_core_http
+│   ├── mitm_core_iam
+│   └── mitm_core_scheduler
+├── collector-layer
+│   ├── mitm_collector_csv-xls
+│   ├── mitm_collector_employee_ora
+│   ├── mitm_collector_employee_pg
+│   ├── mitm_collector_employee-tmp-assigns_ora
+│   ├── mitm_collector_kafka
+│   ├── mitm_collector_mft
+│   ├── mitm_collector_ora
+│   └── mitm_collector_pg
+├── delivery-layer
+│   ├── mitm_delivery_apigee
+│   └── mitm_delivery_cority
+├── maintenance-layer
+│   ├── mitm_adm-data-debug
+│   └── mitm_maintenance_cleanup
+└── transformation-layer
+    └── mitm_transformation_main
+```
+
+## Development Conventions
+
+- **Documentation:** All code documentation and comments must be in **English**.
+- **File Headers:** Every source file must include a standardized SPDX header (C++ style).
+  Example:
+  ```header
+  /**
+   * SPDX-FileComment: [Component Name]
+   * SPDX-FileType: SOURCE
+   * SPDX-FileContributor: ZHENG Robert
+   * SPDX-FileCopyrightText: [YYYY] ZHENG Robert
+   * SPDX-License-Identifier: Apache-2.0
+   *
+   * @file [filename].<ext>
+   * @brief [Brief description]
+   * @version [semantic version]
+   * @date [YYYY-MM-DD]
+   *
+   * @author ZHENG Robert (robert @hase-zheng.net)
+   * @copyright Copyright (c) [YYYY] ZHENG Robert
+   * @LICENSE Apache-2.0
+   */
+  ```
+- **Security First:** Never persist the Master Key (KEK) to disk. It must be provided exclusively via IPC Unix Socket.
+- **Resilience:** Implement robust retries with exponential backoff for external API calls.
+- **Logging:** Structured JSON logging (e.g., using `zerolog` for Go or `tracing` for Rust).
+- **Metrics:** Prometheus exporter for monitoring.
+- **PostgreSQL:** Utilize connection pools and transaction boundaries for concurrency and reliability.
+
+## Instructional Guidance
+
+- **Architecture & Workflows:** You must follow the Flow-Forward Spec Kit workflow.
+- **SpecDD Validation:** Before starting implementation, read the architecture specifications in the `.sdd` files (e.g., `mitm-2.sdd`) and adhere strictly to their rules.
+- Follow instructions in the `AGENTS.md` file.
+- Follow the architectural patterns defined in `docs/Architecture/architecture.md`.
+- Define database migrations inside the respective `migrations/` subfolder of each layer.
