@@ -3,7 +3,7 @@ Spec: MitM Data Aggregator
 Purpose:
   Provision of a reliable, secure, and decoupled system that collects data from various source systems, buffers it, aggregates it daily into JSON packages, and transmits it via a REST interface to a target SaaS solution.
 
-Platform: Go/Linux
+Platform: Go,Rust/Linux
 
 Owns:
   ./**
@@ -17,6 +17,11 @@ Must:
   Child processes communicate status and audit events back to the scheduler via a nil-safe IPC socket.
   All code documentation and comments are in English.
   Every source file includes a standardized SPDX header (C++ style block comment) with Apache-2.0 license.
+  The system is deployed as immutable Docker containers running in AWS ECS.
+  Updates to executables or core configurations require a complete CI/CD deployment of a new container image.
+
+Must not:
+  Implement mechanisms for hot-swapping, uploading, or dynamically modifying executables at runtime.
 
 References:
   ./docs/SpecDD_SpecKit_Integration_EN.md
