@@ -1,0 +1,17 @@
+Spec: Maintenance Layer
+Purpose: Provide administrative, diagnostic, and key-rotation utilities for the system.
+
+Platform: Go/Linux
+
+Structure:
+  ./mitm_adm-data-debug/
+  ./mitm_key_rotation/
+  ./mitm_maintenance_cleanup/
+  ./mitm_maintenance_config/
+
+Owns:
+  ./**
+
+Must:
+  Operate as standalone, demand-driven CLI tools or cron jobs, independent of the scheduler.
+  Connect directly to the database or utilize system APIs when permitted.

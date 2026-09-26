@@ -1,15 +1,17 @@
 Spec: Transformation Layer
-
-Purpose:
-  Transform and validate raw data fragments before delivery.
+Purpose: Transform and validate raw data fragments before delivery.
 
 Platform: Go/Linux
 
-References:
-  ../mitm-2.sdd
+Structure:
+  ./mitm_transformation_main/
+  ./migrations/
 
 Owns:
   ./**
+
+References:
+  ./transformations_concept.md
 
 Must:
   Read raw fragments, map fields according to schemas, and apply validation rules.

@@ -1,15 +1,19 @@
 Spec: Delivery Layer
-
-Purpose:
-  Securely and reliably transmit transformed and encrypted records from the local PostgreSQL database to external target systems.
+Purpose: Securely and reliably transmit transformed and encrypted records from the local PostgreSQL database to external target systems.
 
 Platform: Go/Linux
 
-References:
-  ../mitm-2.sdd
+Structure:
+  ./mitm_delivery_apigee/
+  ./mitm_delivery_cority/
+  ./migrations/
+  ./docs/
 
 Owns:
   ./**
+
+References:
+  ./delivery_concept.md
 
 Must:
   Batch pending records into Delivery Packages.
