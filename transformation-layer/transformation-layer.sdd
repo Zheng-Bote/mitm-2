@@ -14,5 +14,6 @@ References:
   ./transformations_concept.md
 
 Must:
+  Strictly separate logging concerns: system_logs for lifecycle/errors, job_audit_logs for processing metrics, admin_audit_logs for manual triggers/config changes.
   Read raw fragments, map fields according to schemas, and apply validation rules.
   Report progress and errors back to the scheduler via IPC.

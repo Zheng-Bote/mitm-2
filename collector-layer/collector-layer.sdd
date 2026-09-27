@@ -22,6 +22,7 @@ References:
   ./collector_creation_guide.md
 
 Must:
+  Strictly separate logging concerns: system_logs for lifecycle/errors, job_audit_logs for processing metrics, admin_audit_logs for manual triggers/config changes.
   All data written to the `raw_ingestion` landing zone is encrypted with AES-GCM using a Data Encryption Key (DEK).
   The Master Key (KEK) and database credentials are fetched via IPC from the scheduler at process startup.
   Query the source database incrementally using state-based cursors.
