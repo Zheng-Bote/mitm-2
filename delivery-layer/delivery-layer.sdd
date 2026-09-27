@@ -16,6 +16,7 @@ References:
   ./delivery_concept.md
 
 Must:
+  Strictly separate logging concerns: system_logs for lifecycle/errors, job_audit_logs for processing metrics, admin_audit_logs for manual triggers/config changes.
   Batch pending records into Delivery Packages.
   Generate a unique Idempotency-Key for every package.
   Persist packages into a central `delivery_outbox` table (Outbox Pattern).

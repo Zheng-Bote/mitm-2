@@ -14,6 +14,7 @@ References:
   ./concept_admin_frontend.md
 
 Must:
+  Strictly separate logging concerns: system_logs for lifecycle/errors, job_audit_logs for processing metrics, admin_audit_logs for manual triggers/config changes.
   Connect exclusively to the core-layer via the provided REST API (JSON:API).
   Provide secure authentication flows (e.g. IAM session tokens) for all actions.
   Never persist plain text credentials, tokens, or PII to the local disk unencrypted.

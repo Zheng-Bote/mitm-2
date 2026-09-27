@@ -14,6 +14,10 @@ Must:
   Child processes (collectors, deliverers, etc.) dynamically fetch the KEK and DB credentials via the IPC Unix Socket from the Scheduler.
   Each layer component is compiled as an independent Go binary with its own go.mod.
   Progress and cursors are tracked strictly in PostgreSQL.
+  Logging must strictly separate concerns across all layers:
+    - system_logs: Lifecycle events (Start, Stop, Cancel) and fundamental system/program errors.
+    - job_audit_logs: Detailed job processing metrics (records collected, processed, delivered, deleted).
+    - admin_audit_logs: Manual administrative actions (configuration changes, key rotations, trigger actions).
   Child processes communicate status and audit events back to the scheduler via a nil-safe IPC socket.
   All code documentation and comments are in English.
   Every source file includes a standardized SPDX header (C++ style block comment) with Apache-2.0 license.
