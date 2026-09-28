@@ -13,26 +13,27 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 <details>
 <summary>Table of Contents</summary>
 
-- [Project Overview](#project-overview)
-- [Architecture & Core Components](#architecture-core-components)
-  - [Key Architectural Principles](#key-architectural-principles)
-- [Technologies Used](#technologies-used)
-- [Getting Started / First Steps for Execution](#getting-started-first-steps-for-execution)
-- [Conclusion of the MitM-Project](#conclusion-of-the-mitm-project)
-- [🏗️ C4 System & Component Context](#-c4-system-component-context)
-- [📂 Project Structure & Layers](#-project-structure-layers)
-  - [1. MitM Scheduler](#1-mitm-scheduler)
-  - [2. Collector Layer](#2-collector-layer)
-  - [3. Transformation Layer](#3-transformation-layer)
-  - [4. Delivery Layer](#4-delivery-layer)
-  - [5. Admin Frontend](#5-admin-frontend)
-  - [6. Maintenance Layer](#6-maintenance-layer)
-- [🔒 Security & Key Management](#-security-key-management)
-- [🛠️ Build and Running Instructions](#-build-and-running-instructions)
-  - [1. Prerequisites](#1-prerequisites)
-  - [2. Database Migrations](#2-database-migrations)
-  - [3. Compiling the Components](#3-compiling-the-components)
-  - [4. Running the Pipeline (End-to-End Test)](#4-running-the-pipeline-end-to-end-test)
+- [Man-in-the-Middle (MitM) Data Aggregator](#man-in-the-middle-mitm-data-aggregator)
+  - [Project Overview](#project-overview)
+  - [Architecture \& Core Components](#architecture--core-components)
+    - [Key Architectural Principles](#key-architectural-principles)
+  - [Technologies Used](#technologies-used)
+  - [Getting Started / First Steps for Execution](#getting-started--first-steps-for-execution)
+  - [Conclusion of the MitM-Project](#conclusion-of-the-mitm-project)
+  - [🏗️ C4 System \& Component Context](#️-c4-system--component-context)
+  - [📂 Project Structure \& Layers](#-project-structure--layers)
+    - [1. MitM Scheduler](#1-mitm-scheduler)
+    - [2. Collector Layer](#2-collector-layer)
+    - [3. Transformation Layer](#3-transformation-layer)
+    - [4. Delivery Layer](#4-delivery-layer)
+    - [5. Admin Frontend](#5-admin-frontend)
+    - [6. Maintenance Layer](#6-maintenance-layer)
+  - [🔒 Security \& Key Management](#-security--key-management)
+  - [🛠️ Build and Running Instructions](#️-build-and-running-instructions)
+    - [1. Prerequisites](#1-prerequisites)
+    - [2. Database Migrations](#2-database-migrations)
+    - [3. Compiling the Components](#3-compiling-the-components)
+    - [4. Running the Pipeline (End-to-End Test)](#4-running-the-pipeline-end-to-end-test)
 
 </details>
 
@@ -40,20 +41,24 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 
 ## Project Overview
 
-The **MitM (Man-in-the-Middle) Data Aggregator** project is a secure and decoupled data ingestion and delivery pipeline written primarily in Go (Golang). The system collects raw data from heterogeneous source systems (e.g., PostgreSQL, Oracle, CSV, APIs), encrypts it locally ("at-rest"), validates and transforms it, and finally sends it as aggregated JSON batches to a target SaaS platform (e.g., Apigee).
+The **MitM (Man-in-the-Middle) Data Aggregator** project is a secure and decoupled data ingestion and delivery pipeline. The system collects raw data from heterogeneous source systems (e.g., PostgreSQL, Oracle, CSV, APIs), encrypts it locally ("at-rest"), validates and transforms it, and finally sends it as aggregated JSON batches to a target SaaS platform (e.g., Apigee).
 
 The project places high value on data security and the protection of personally identifiable information (PII) through the use of **Envelope Encryption** (AES-GCM with a two-tier key hierarchy: KEK and DEK) as well as crypto-shredding. PostgreSQL is used for data storage, buffering, and state management (e.g., cursors, dead letter queue).
+
+Supporting **AI Engineering** for AI Driven Specification and Development using SpecDD ([https://specdd.ai](https://specdd.ai)) and Github Spec-Kit ([https://github.github.com/spec-kit/](https://github.github.com/spec-kit/))
+
+See [docs/AI_Workflow_DE.md](docs/AI_Workflow_DE.md) or [docs/AI_Workflow_EN.md](docs/AI_Workflow_EN.md).
 
 ## Architecture & Core Components
 
 The system is divided into modularly decoupled layers that operate according to the "single responsibility" principle and are orchestrated by a central scheduler:
 
-1. **Core Layer (`core-layer/`)**: The control instance of the system. The HTTP-Core acts as an ECS Supervisor (PID 1), orchestrating the internal `mitm_iam` and `mitm_scheduler` microservices. The Scheduler orchestrates collector and delivery jobs while strictly isolating cryptographic Master Keys from the web tier via Zero-Trust IPC sockets.
-2. **Collector Layer (`collector-layer/`)**: Independent collectors (e.g., `mitm_collector_pg`, `mitm_collector_ora`) that connect to source systems, retrieve raw data via cursors (state tracking), initially encrypt it, and store it as fragments.
-3. **Transformation Layer (`transformation-layer/`)**: Reads the raw data, waits until all required source fragments for a `correlation_id` arrive, decrypts them, merges them into a Golden Record, applies dynamic mapping and validation rules, and stores the result for delivery.
-4. **Delivery Layer (`delivery-layer/`)**: Bundles the validated records into daily JSON packages and securely sends them via HTTPS POST (including idempotency keys) to the target system. In case of errors, exponential backoff and a Dead Letter Queue (DLQ) are utilized.
-5. **Maintenance Layer (`maintenance-layer/`)**: Responsible for enforcing data retention policies. It purges old logs, processed raw fragments, successfully delivered packages, and expired metrics.
-6. **Admin Frontend (`admin-frontend/`)**: A separate C++ Qt application that serves as a visual management and monitoring interface (control plane) for administrators.
+1. **Core Layer (`core-layer/`)**: The control instance of the system. The HTTP-Core acts as an ECS Supervisor (PID 1), orchestrating the internal `mitm_iam` and `mitm_scheduler` microservices. The Scheduler orchestrates collector and delivery jobs while strictly isolating cryptographic Master Keys from the web tier via Zero-Trust IPC sockets. Written in Rust.
+2. **Collector Layer (`collector-layer/`)**: Independent collectors (e.g., `mitm_collector_pg`, `mitm_collector_ora`) that connect to source systems, retrieve raw data via cursors (state tracking), initially encrypt it, and store it as fragments. Written in Go.
+3. **Transformation Layer (`transformation-layer/`)**: Reads the raw data, waits until all required source fragments for a `correlation_id` arrive, decrypts them, merges them into a Golden Record, applies dynamic mapping and validation rules, and stores the result for delivery. Written in Go.
+4. **Delivery Layer (`delivery-layer/`)**: Bundles the validated records into daily JSON packages and securely sends them via HTTPS POST (including idempotency keys) to the target system. In case of errors, exponential backoff and a Dead Letter Queue (DLQ) are utilized. Written in Go.
+5. **Maintenance Layer (`maintenance-layer/`)**: Responsible for enforcing data retention policies. It purges old logs, processed raw fragments, successfully delivered packages, and expired metrics. Written in Go or Rust.
+6. **Admin Frontend (`admin-frontend/`)**: A separate C++ Qt application that serves as a visual management and monitoring interface (control plane) for administrators. Written in C++26/Qt6.
 
 ### Key Architectural Principles
 
