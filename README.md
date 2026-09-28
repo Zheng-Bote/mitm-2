@@ -13,26 +13,27 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 <details>
 <summary>Table of Contents</summary>
 
-- [Project Overview](#project-overview)
-- [Architecture & Core Components](#architecture-core-components)
-  - [Key Architectural Principles](#key-architectural-principles)
-- [Technologies Used](#technologies-used)
-- [Getting Started / First Steps for Execution](#getting-started-first-steps-for-execution)
-- [Conclusion of the MitM-Project](#conclusion-of-the-mitm-project)
-- [🏗️ C4 System & Component Context](#-c4-system-component-context)
-- [📂 Project Structure & Layers](#-project-structure-layers)
-  - [1. MitM Scheduler](#1-mitm-scheduler)
-  - [2. Collector Layer](#2-collector-layer)
-  - [3. Transformation Layer](#3-transformation-layer)
-  - [4. Delivery Layer](#4-delivery-layer)
-  - [5. Admin Frontend](#5-admin-frontend)
-  - [6. Maintenance Layer](#6-maintenance-layer)
-- [🔒 Security & Key Management](#-security-key-management)
-- [🛠️ Build and Running Instructions](#-build-and-running-instructions)
-  - [1. Prerequisites](#1-prerequisites)
-  - [2. Database Migrations](#2-database-migrations)
-  - [3. Compiling the Components](#3-compiling-the-components)
-  - [4. Running the Pipeline (End-to-End Test)](#4-running-the-pipeline-end-to-end-test)
+- [Man-in-the-Middle (MitM) Data Aggregator](#man-in-the-middle-mitm-data-aggregator)
+  - [Project Overview](#project-overview)
+  - [Architecture \& Core Components](#architecture--core-components)
+    - [Key Architectural Principles](#key-architectural-principles)
+  - [Technologies Used](#technologies-used)
+  - [Getting Started / First Steps for Execution](#getting-started--first-steps-for-execution)
+  - [Conclusion of the MitM-Project](#conclusion-of-the-mitm-project)
+  - [🏗️ C4 System \& Component Context](#️-c4-system--component-context)
+  - [📂 Project Structure \& Layers](#-project-structure--layers)
+    - [1. MitM Scheduler](#1-mitm-scheduler)
+    - [2. Collector Layer](#2-collector-layer)
+    - [3. Transformation Layer](#3-transformation-layer)
+    - [4. Delivery Layer](#4-delivery-layer)
+    - [5. Admin Frontend](#5-admin-frontend)
+    - [6. Maintenance Layer](#6-maintenance-layer)
+  - [🔒 Security \& Key Management](#-security--key-management)
+  - [🛠️ Build and Running Instructions](#️-build-and-running-instructions)
+    - [1. Prerequisites](#1-prerequisites)
+    - [2. Database Migrations](#2-database-migrations)
+    - [3. Compiling the Components](#3-compiling-the-components)
+    - [4. Running the Pipeline (End-to-End Test)](#4-running-the-pipeline-end-to-end-test)
 
 </details>
 
@@ -40,9 +41,13 @@ The **MitM Data Aggregator** is a secure, decoupled, and reliable Go-based inges
 
 ## Project Overview
 
-The **MitM (Man-in-the-Middle) Data Aggregator** project is a secure and decoupled data ingestion and delivery pipeline written primarily in Go (Golang). The system collects raw data from heterogeneous source systems (e.g., PostgreSQL, Oracle, CSV, APIs), encrypts it locally ("at-rest"), validates and transforms it, and finally sends it as aggregated JSON batches to a target SaaS platform (e.g., Apigee).
+The **MitM (Man-in-the-Middle) Data Aggregator** project is a secure and decoupled data ingestion and delivery pipeline. The system collects raw data from heterogeneous source systems (e.g., PostgreSQL, Oracle, CSV, APIs), encrypts it locally ("at-rest"), validates and transforms it, and finally sends it as aggregated JSON batches to a target SaaS platform (e.g., Apigee).
 
 The project places high value on data security and the protection of personally identifiable information (PII) through the use of **Envelope Encryption** (AES-GCM with a two-tier key hierarchy: KEK and DEK) as well as crypto-shredding. PostgreSQL is used for data storage, buffering, and state management (e.g., cursors, dead letter queue).
+
+Supporting **AI Engineering** for AI Driven Specification and Development using SpecDD ([https://specdd.ai](https://specdd.ai)) and Github Spec-Kit ([https://github.github.com/spec-kit/](https://github.github.com/spec-kit/))
+
+See [docs/AI_Workflow_DE.md](docs/AI_Workflow_DE.md) or [docs/AI_Workflow_EN.md](docs/AI_Workflow_EN.md).
 
 ## Architecture & Core Components
 
@@ -65,10 +70,10 @@ The system is divided into modularly decoupled layers that operate according to 
 
 ## Technologies Used
 
-- **Backend**: Go 1.26.5+ (for performance, type safety, and single-binary deployments)
-- **Frontend / UI**: C++ with Qt framework
-- **Database & State Management**: PostgreSQL
-- **Security / Cryptography**: AES-GCM (Master Key + Data Encryption Keys), `subtle.ConstantTimeCompare`
+- **Backend**: Go 1.26.5 and Rust 2024 Edition (for performance, type safety, and single-binary deployments)
+- **Frontend / UI**: C++26 with Qt6 framework
+- **Database & State Management**: PostgreSQL v18.4+
+- **Security / Cryptography**: AES-GCM (Master Key + Data Encryption Keys), `subtle.ConstantTimeCompare`, Argon2Id (Password Hashing)
 - **Monitoring & Logging**: Prometheus, `zerolog` (JSON)
 
 ## Getting Started / First Steps for Execution
