@@ -40,3 +40,4 @@ for repo in "${repos[@]}"; do
   
   cd - > /dev/null
 done
+
