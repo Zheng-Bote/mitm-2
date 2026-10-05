@@ -448,8 +448,8 @@ CREATE TABLE IF NOT EXISTS roles (
 -- Default roles
 INSERT INTO roles (name, description) VALUES
 ('ADMIN', 'Full access to all system features'),
-('VIEWER', 'Read-only access to monitoring and logs'),
-('UPLOADER', 'Access to manual file upload mechanisms (CSV/XLSX)')
+('USER', 'Can manage jobs, view logs, export data, requeue DLQ, and upload files'),
+('VIEWER', 'Read-only access to dashboard and scheduler')
 ON CONFLICT (name) DO NOTHING;
 
 -- Table for user roles (encrypted assignment)
@@ -756,3 +756,33 @@ CREATE TABLE IF NOT EXISTS adapter_tokens (
 );
 
 COMMENT ON TABLE adapter_tokens IS 'Stores central authentication tokens (OAuth2) across multiple topics for the same adapter endpoint.';
+
+
+-- ==========================================
+-- Source: migrations/001_user_sessions_patch.sql
+-- ==========================================
+/**
+ * SPDX-FileComment: User Sessions Migration
+ * SPDX-FileType: SOURCE
+ * SPDX-FileContributor: ZHENG Robert
+ * SPDX-FileCopyrightText: 2026 ZHENG Robert
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+    session_token UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    os_user VARCHAR(255) NOT NULL,
+    
+    -- Absolute 24h TTL
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMPTZ NOT NULL, 
+    
+    -- 2h Idle Timeout
+    last_active_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    
+    client_ip VARCHAR(45)
+);
+
+COMMENT ON TABLE user_sessions IS 'Stores active user sessions, enforcing absolute TTL and idle timeouts.';
+
+CREATE INDEX IF NOT EXISTS idx_sessions_expiry ON user_sessions(expires_at, last_active_at);
