@@ -1,0 +1,42 @@
+Spec: Auth Audit Logging and UI Role Checks
+
+Purpose:
+  Ensure that user logins are properly audited in the Admin-Log, and that the Web Frontend correctly enforces Role-Based Access Control (RBAC) in the UI by hiding unauthorized actions for non-admin users (e.g. VIEWER).
+
+Structure:
+  ./...
+
+Owns:
+  /core-layer/mitm_http-server/src/handlers/api_v1/auth.rs
+  /admin-frontend/mitm_fe_web/src/app/features/scheduler/scheduler.component.html
+  /admin-frontend/mitm_fe_web/src/app/features/scheduler/components/scheduler-table/scheduler-table.component.html
+  /admin-frontend/mitm_fe_web/src/app/features/scheduler/components/scheduler-table/scheduler-table.component.ts
+
+Must:
+  The `POST /api/v1/auth/session` endpoint must record an entry in the `admin_audit_logs` table upon successful login.
+  The Web Frontend (`SchedulerTableComponent` and `SchedulerComponent`) must hide mutating actions based on the current user's role:
+    - Add, Edit, Delete: Only visible to `ADMIN`.
+    - Execute, Stop: Visible to `ADMIN` and `USER`.
+  The Backend (`mitm_http-server`) must enforce RBAC (via Casbin policies and `authz_middleware`) so that endpoints are protected according to:
+    - `/api/v1/jobs` GET: VIEWER
+    - `/api/v1/jobs` POST (Create/Update): ADMIN
+    - `/api/v1/jobs/:name` DELETE: ADMIN
+    - `/api/v1/jobs/:name/stop` POST: USER
+    - `/api/v1/jobs/:name/execute` POST: USER
+
+Must not:
+  A user with only the `VIEWER` role must not see any action buttons in the UI for job mutations.
+  A user without the `ADMIN` role must not be able to bypass the UI and execute job edits/deletions via direct API calls (e.g. curl).
+  A user without the `USER` or `ADMIN` role must not be able to execute or stop jobs.
+
+Tasks:
+  [x] Backend: Implement explicit admin audit logging in `create_session` function inside `mitm_http-server/src/handlers/api_v1/auth.rs`.
+  [x] Backend: Verify and tighten Casbin policies in `mitm_http-server/src/main.rs` to ensure only `ADMIN` can access mutating `/api/v1/jobs` endpoints.
+  [x] Backend: Remove the legacy "v0" API endpoints (e.g. all `/admin/*` routes), keeping only `/` (SPA fallback), `/health`, and `/api/v1/*`.
+  [x] Frontend: Update `SchedulerComponent` template to conditionally show the "+ Add Job" button based on `authService.roles()`.
+  [x] Frontend: Update `SchedulerTableComponent` template to conditionally show "Edit", "Delete", "Execute", and "Stop" buttons based on `authService.roles()`.
+
+Done when:
+  A successful login creates an entry in `admin_audit_logs`.
+  A user logged in as "vuser" (VIEWER role) cannot see mutation buttons in the Scheduler UI.
+  A user logged in as "admin" (ADMIN role) can see all mutation buttons in the Scheduler UI.
