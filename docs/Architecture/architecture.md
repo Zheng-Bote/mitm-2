@@ -311,3 +311,8 @@ flowchart TD
 | **KEK** | Key Encryption Key (Master Key). |
 | **DEK** | Data Encryption Key (per fragment). |
 | **DLQ** | Dead Letter Queue (storage for permanently failed records). |
+
+## API Standards & Authentication
+- **Error Responses:** All HTTP APIs must return strict JSON:API compliant error payloads (`{"errors": [{"status": "...", "title": "...", "detail": "..."}]}`) instead of plain-text responses.
+- **Session Management:** The IAM layer tracks `client_ip` alongside session creation for auditability. Sessions are subject to absolute (24h) and idle (2h) TTLs, with background auto-renewal from active clients.
+- **Access Control:** Authentication is unconditionally rejected for users marked as `is_active=false` with a dedicated 403 Forbidden JSON:API response.
