@@ -9,3 +9,4 @@
 ALTER TABLE admin_users 
 ADD COLUMN IF NOT EXISTS first_name TEXT,
 ADD COLUMN IF NOT EXISTS last_name TEXT;
+
