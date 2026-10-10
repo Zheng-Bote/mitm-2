@@ -363,6 +363,8 @@ CREATE TABLE IF NOT EXISTS admin_users (
     id SERIAL PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL, -- Scrypt or Argon2 hash
+    first_name TEXT,
+    last_name TEXT,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
@@ -786,3 +788,18 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 COMMENT ON TABLE user_sessions IS 'Stores active user sessions, enforcing absolute TTL and idle timeouts.';
 
 CREATE INDEX IF NOT EXISTS idx_sessions_expiry ON user_sessions(expires_at, last_active_at);
+
+-- ==========================================
+-- Source: migrations/003_admin_users_profile.sql
+-- ==========================================
+/**
+ * SPDX-FileComment: Admin Users Profile Migration
+ * SPDX-FileType: SOURCE
+ * SPDX-FileContributor: Antigravity
+ * SPDX-FileCopyrightText: 2026 ZHENG Robert
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ALTER TABLE admin_users 
+ADD COLUMN IF NOT EXISTS first_name TEXT,
+ADD COLUMN IF NOT EXISTS last_name TEXT;
