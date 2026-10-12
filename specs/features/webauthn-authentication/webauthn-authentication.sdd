@@ -1,0 +1,43 @@
+Spec: Feature WebAuthn Authentication and Management
+
+Purpose:
+  Implement WebAuthn (FIDO2) Relying Party in the Core Layer and a cross-platform desktop authentication flow in admin-frontend/mitm_fe_cpp using libfido2.
+
+Platform: Rust/Axum, C++26/Qt6/libfido2
+
+References:
+  ../../../mitm-2.sdd
+  ../../../core-layer/core-layer.sdd
+  ../../../admin-frontend/mitm_fe_cpp/mitm_fe_cpp.sdd
+
+Owns:
+  ./**
+
+Can modify:
+  /core-layer/**
+  /admin-frontend/mitm_fe_cpp/**
+  /migrations/**
+
+Must:
+  All code documentation and comments must be in English.
+  Every source file must include the standardized SPDX Apache-2.0 header.
+  Database migration must extend admin_users with department and introduce webauthn_credentials.
+  User registration must set is_active to false by default.
+  Initial Bootstrap Admin via INITIAL_ADMIN_TOKEN must immediately have is_active set to true and ADMIN role.
+  Provide WebAuthn RP endpoints (/api/v1/auth/webauthn/register/start, /finish, /login/start, /finish).
+  Desktop frontend must prompt for Master Password first to decrypt config.enc.
+  Desktop frontend must display interactive Login / Registration window only after config decryption.
+  Desktop frontend must default LoginID to the current OS username.
+  Desktop frontend must use libfido2 via Conan 2 for cross-platform FIDO2 operations.
+
+Tasks:
+  [ ] #1 Create database migration migrations/004_webauthn_and_department.sql.
+  [ ] #2 Implement WebAuthn Relying Party in core-layer using webauthn-rs.
+  [ ] #3 Update user registration in core-layer to set is_active to false, keeping bootstrap admin active.
+  [ ] #4 Add libfido2 dependency to admin-frontend/mitm_fe_cpp via Conan 2 and CMakeLists.txt.
+  [ ] #5 Refactor admin-frontend/mitm_fe_cpp startup flow to decrypt config first, then show Login/Registration UI.
+  [ ] #6 Implement native Qt Login & Registration dialogs with libfido2 hardware key communication.
+  [ ] #7 Update CHANGELOG.md in core-layer and admin-frontend/mitm_fe_cpp.
+
+Done when:
+  WebAuthn endpoints and frontend libfido2 registration/login flow succeed, user is created with is_active=false, and initial admin bootstrap remains active.
