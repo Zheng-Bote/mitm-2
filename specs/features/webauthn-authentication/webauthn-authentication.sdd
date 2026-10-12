@@ -31,13 +31,13 @@ Must:
   Desktop frontend must use libfido2 via Conan 2 for cross-platform FIDO2 operations.
 
 Tasks:
-  [ ] #1 Create database migration migrations/004_webauthn_and_department.sql.
-  [ ] #2 Implement WebAuthn Relying Party in core-layer using webauthn-rs.
-  [ ] #3 Update user registration in core-layer to set is_active to false, keeping bootstrap admin active.
-  [ ] #4 Add libfido2 dependency to admin-frontend/mitm_fe_cpp via Conan 2 and CMakeLists.txt.
-  [ ] #5 Refactor admin-frontend/mitm_fe_cpp startup flow to decrypt config first, then show Login/Registration UI.
-  [ ] #6 Implement native Qt Login & Registration dialogs with libfido2 hardware key communication.
-  [ ] #7 Update CHANGELOG.md in core-layer and admin-frontend/mitm_fe_cpp.
+  [x] #1 Create database migration migrations/004_webauthn_and_department.sql.
+  [x] #2 Implement WebAuthn Relying Party in core-layer using webauthn-rs.
+  [x] #3 Update user registration in core-layer to set is_active to false, keeping bootstrap admin active.
+  [x] #4 Add libfido2 dependency to admin-frontend/mitm_fe_cpp via Conan 2 and CMakeLists.txt.
+  [x] #5 Refactor admin-frontend/mitm_fe_cpp startup flow to decrypt config first, then show Login/Registration UI.
+  [x] #6 Implement native Qt Login & Registration dialogs with libfido2 hardware key communication.
+  [x] #7 Update CHANGELOG.md in core-layer and admin-frontend/mitm_fe_cpp.
 
 Done when:
   WebAuthn endpoints and frontend libfido2 registration/login flow succeed, user is created with is_active=false, and initial admin bootstrap remains active.
