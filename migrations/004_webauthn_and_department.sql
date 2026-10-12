@@ -42,3 +42,6 @@ CREATE TABLE IF NOT EXISTS webauthn_states (
 
 COMMENT ON TABLE webauthn_states IS 'Temporary storage for WebAuthn ceremony states (challenges).';
 CREATE INDEX IF NOT EXISTS idx_webauthn_states_expires_at ON webauthn_states(expires_at);
+
+-- 4. Ensure mitm_user has full privileges on newly created tables
+GRANT ALL PRIVILEGES ON TABLE webauthn_credentials, webauthn_states TO mitm_user;
