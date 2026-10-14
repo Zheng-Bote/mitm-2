@@ -18,6 +18,7 @@ Owns:
 Can modify:
   /core-layer/mitm_http-server/**
   /admin-frontend/mitm_fe_cpp/**
+  /admin-frontend/mitm_fe_web/**
 
 Must:
   Session tokens are issued only by `/api/v1/auth/webauthn/login/finish` and by the bootstrap `/api/v1/auth/webauthn/register/finish`.
@@ -26,7 +27,9 @@ Must:
   When no user exists in `admin_users` at startup, `INITIAL_ADMIN_TOKEN` must be set with at least `32` characters; otherwise the http-server logs an error to the console and terminates with a non-zero exit code.
   The bootstrap token is compared in constant time.
   At most one bootstrap administrator is created, even when bootstrap ceremonies run concurrently.
+  WebAuthn ceremonies rejected for an RP origin or RP ID mismatch are logged to `system_logs` with the expected origin; clients receive only the generic verification error.
   The desktop frontend authenticates and re-authenticates only through the passkey ceremony of @LoginDialog.
+  The web frontend authenticates only through the passkey ceremony via `@simplewebauthn/browser` and is served from the WebAuthn RP origin.
 
 Must not:
   Accept a client-supplied `client_ip`.
@@ -41,10 +44,10 @@ Tasks:
   [x] #5 Serialize bootstrap administrator creation.
   [x] #6 Route @AuthManager.performLogin through @LoginDialog and remove @AuthManager.runWindowsHello, @AuthManager.establishSession and the browser sign-in button.
   [x] #7 Update API documentation, READMEs and CHANGELOGs.
-  [ ] #8 Migrate admin-frontend/mitm_fe_web to the WebAuthn login flow.
+  [x] #8 Migrate admin-frontend/mitm_fe_web to the WebAuthn login flow.
 
 Done when:
-  `cargo build` for core-layer and the mitm_fe_cpp build succeed, no code path issues a session without a WebAuthn ceremony, and startup without admins and without a valid `INITIAL_ADMIN_TOKEN` aborts.
+  `cargo build` for core-layer, the mitm_fe_cpp build and `ng build` for mitm_fe_web succeed, no code path issues a session without a WebAuthn ceremony, and startup without admins and without a valid `INITIAL_ADMIN_TOKEN` aborts.
 
 Scenario: fresh installation without bootstrap token
   Given `admin_users` is empty
