@@ -1,0 +1,59 @@
+Spec: Feature WebAuthn-Only Authentication
+
+Purpose:
+  Session tokens are issued exclusively after a server-verified WebAuthn (FIDO2) ceremony, so no client can obtain a session by merely naming a user.
+
+Platform: Rust/Axum, C++26/Qt6/libfido2
+
+References:
+  ../../../mitm-2.sdd
+  ../../../core-layer/core-layer.sdd
+  ../../../core-layer/specs/security.sdd
+  ../../../admin-frontend/mitm_fe_cpp/mitm_fe_cpp.sdd
+  ../webauthn-authentication/webauthn-authentication.sdd
+
+Owns:
+  ./**
+
+Can modify:
+  /core-layer/mitm_http-server/**
+  /admin-frontend/mitm_fe_cpp/**
+
+Must:
+  Session tokens are issued only by `/api/v1/auth/webauthn/login/finish` and by the bootstrap `/api/v1/auth/webauthn/register/finish`.
+  The session's `client_ip` is derived server-side from the TCP peer address, or from the rightmost `X-Forwarded-For` entry when `MITM_TRUST_PROXY_HEADERS` is `true`.
+  Requests to `/api/v1/auth/webauthn/*` and `/api/v1/auth/bootstrap/*` are rate-limited per client IP and answered with `429` when the limit is exceeded.
+  When no user exists in `admin_users` at startup, `INITIAL_ADMIN_TOKEN` must be set with at least `32` characters; otherwise the http-server logs an error to the console and terminates with a non-zero exit code.
+  The bootstrap token is compared in constant time.
+  At most one bootstrap administrator is created, even when bootstrap ceremonies run concurrently.
+  The desktop frontend authenticates and re-authenticates only through the passkey ceremony of @LoginDialog.
+
+Must not:
+  Accept a client-supplied `client_ip`.
+  Fall back to a built-in bootstrap token.
+  Persist the bootstrap token to disk.
+
+Tasks:
+  [x] #1 Remove `POST /api/v1/auth/session` and its public-path bypass in @auth_middleware.
+  [x] #2 Derive `client_ip` server-side and store it for WebAuthn-issued sessions.
+  [x] #3 Add per-IP rate limiting for the WebAuthn and bootstrap endpoints.
+  [x] #4 Enforce `INITIAL_ADMIN_TOKEN` at startup and compare it in constant time.
+  [x] #5 Serialize bootstrap administrator creation.
+  [x] #6 Route @AuthManager.performLogin through @LoginDialog and remove @AuthManager.runWindowsHello, @AuthManager.establishSession and the browser sign-in button.
+  [x] #7 Update API documentation, READMEs and CHANGELOGs.
+  [ ] #8 Migrate admin-frontend/mitm_fe_web to the WebAuthn login flow.
+
+Done when:
+  `cargo build` for core-layer and the mitm_fe_cpp build succeed, no code path issues a session without a WebAuthn ceremony, and startup without admins and without a valid `INITIAL_ADMIN_TOKEN` aborts.
+
+Scenario: fresh installation without bootstrap token
+  Given `admin_users` is empty
+  And `INITIAL_ADMIN_TOKEN` is unset or shorter than `32` characters
+  When the http-server starts
+  Then an error is logged to the console
+  And the http-server and its child processes terminate with a non-zero exit code
+
+Scenario: legacy session request
+  Given any client
+  When it sends `POST /api/v1/auth/session`
+  Then no session token is issued
