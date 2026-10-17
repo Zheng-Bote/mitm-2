@@ -1,0 +1,59 @@
+Spec: Feature transformation_errors.created_at as TIMESTAMPTZ
+
+Purpose:
+  Store `transformation_errors.created_at` with time zone, so the http-server can decode it as `DateTime<Utc>`.
+  Before, `GET /api/v1/logs/transformation-errors` answered HTTP 500 as soon as the table contained rows.
+  Issue: https://github.com/Zheng-Bote/mitm_transformation_main/issues/9
+
+Platform: PostgreSQL
+
+References:
+  ../../../mitm-2.sdd
+  ../../../transformation-layer/transformation-layer.sdd
+
+Owns:
+  ./**
+
+Can modify:
+  /transformation-layer/migrations/**
+  /migrations/setup.sql
+  /docs/Transformation-layer/README.md
+  /CHANGELOG.md
+
+Decisions:
+  Existing values are interpreted as UTC (`AT TIME ZONE 'UTC'`), because the Rust transformation job writes via sqlx, which sets the session `TimeZone` to `UTC`, so `DEFAULT NOW()` stored UTC wall-clock time.
+  The column is changed by a new migration instead of editing `006_transformation_errors.sql`, so existing databases are migrated and `setup.sql` stays append-only.
+
+Must:
+  `transformation_errors.created_at` is `TIMESTAMPTZ NOT NULL DEFAULT NOW()`.
+  The migration converts only a `timestamp without time zone` column and is a no-op otherwise (idempotent, safe to re-run with `setup.sql`).
+  No rows are lost or reordered.
+
+Must not:
+  Change code in `mitm_transformation_main` or `core-layer/mitm_http-server`; both already work with `TIMESTAMPTZ`.
+
+Tasks:
+  [x] #1 Add `transformation-layer/migrations/009_transformation_errors_timestamptz.sql`.
+  [x] #2 Append the migration to `migrations/setup.sql`.
+  [x] #3 Update `CHANGELOG.md` and `docs/Transformation-layer/README.md`.
+  [ ] #4 Verify on the dev database: run the migration, re-run it, call `GET /api/v1/logs/transformation-errors`.
+
+Done when:
+  `\d transformation_errors` shows `created_at timestamp with time zone not null default now()`, re-running the migration changes nothing, and `GET /api/v1/logs/transformation-errors` answers 200 with rows.
+
+Scenario: existing database with error rows
+  Given `transformation_errors.created_at` is `timestamp without time zone`
+  And a row has `created_at = '2026-10-17 10:03:00'`
+  When the migration runs
+  Then the column type is `timestamp with time zone`
+  And the row has `created_at = '2026-10-17 10:03:00+00'`
+
+Scenario: migration re-run
+  Given `transformation_errors.created_at` is already `timestamp with time zone`
+  When the migration runs again
+  Then nothing changes
+
+Scenario: API with error rows
+  Given `transformation_errors` contains rows
+  When a client requests `GET /api/v1/logs/transformation-errors`
+  Then the http-server answers 200 with the rows

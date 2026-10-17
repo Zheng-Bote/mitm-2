@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Fixed
+- **Transformation Errors API**: `transformation_errors.created_at` is now `TIMESTAMPTZ` (migration `transformation-layer/migrations/009_transformation_errors_timestamptz.sql`, appended to `migrations/setup.sql`). The `TIMESTAMP` column could not be decoded by the http-server, so `GET /api/v1/logs/transformation-errors` and the system statistics answered HTTP 500 as soon as the table had rows. Existing values are converted as UTC; the migration is idempotent ([mitm_transformation_main#9](https://github.com/Zheng-Bote/mitm_transformation_main/issues/9)).
+
 ## [MVP-2.12.0] - 2026-09-22
 
 ### Added / Changed
