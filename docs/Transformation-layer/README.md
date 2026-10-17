@@ -61,7 +61,7 @@ erDiagram
         VARCHAR failed_field
         VARCHAR rule_name
         TEXT error_message
-        TIMESTAMP created_at
+        TIMESTAMPTZ created_at
     }
 
     topic_dependencies {
@@ -131,6 +131,7 @@ The following configuration schemas define the mapping data model:
 - [006_transformation_errors.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/006_transformation_errors.sql) - Dead Letter Queue (DLQ) tracking errors during processing.
 - [007_target_fragments.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/007_target_fragments.sql) - The aggregated Golden Records stored securely.
 - [008_topic_dependencies.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/008_topic_dependencies.sql) - Defines which source systems are required for a given topic before aggregation occurs.
+- [009_transformation_errors_timestamptz.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/009_transformation_errors_timestamptz.sql) - Changes `transformation_errors.created_at` to `TIMESTAMPTZ` (existing values as UTC, idempotent).
 
 ---
 
