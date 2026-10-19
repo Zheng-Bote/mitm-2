@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Transformation performance**: new index `idx_raw_topic_correlation` on `raw_ingestion (topic, correlation_id, status, source_system, created_at DESC)` (migration `transformation-layer/migrations/010_raw_ingestion_correlation_index.sql`, appended to `migrations/setup.sql`). The claim query and `load_counterparts` look up fragments per `correlation_id` including status `processed`, which `idx_raw_pending_topics` does not cover, so every aggregate caused sequential scans over the whole table (PROD: ~5 minutes for 500 records at ~82k rows). The migration is idempotent.
 - **Transformation Errors API**: `transformation_errors.created_at` is now `TIMESTAMPTZ` (migration `transformation-layer/migrations/009_transformation_errors_timestamptz.sql`, appended to `migrations/setup.sql`). The `TIMESTAMP` column could not be decoded by the http-server, so `GET /api/v1/logs/transformation-errors` and the system statistics answered HTTP 500 as soon as the table had rows. Existing values are converted as UTC; the migration is idempotent ([mitm_transformation_main#9](https://github.com/Zheng-Bote/mitm_transformation_main/issues/9)).
 
 ## [MVP-2.12.0] - 2026-09-22

@@ -132,6 +132,7 @@ The following configuration schemas define the mapping data model:
 - [007_target_fragments.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/007_target_fragments.sql) - The aggregated Golden Records stored securely.
 - [008_topic_dependencies.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/008_topic_dependencies.sql) - Defines which source systems are required for a given topic before aggregation occurs.
 - [009_transformation_errors_timestamptz.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/009_transformation_errors_timestamptz.sql) - Changes `transformation_errors.created_at` to `TIMESTAMPTZ` (existing values as UTC, idempotent).
+- [010_raw_ingestion_correlation_index.sql](file:///home/zb_bamboo/DEV/__NEW__/Go/mitm-2/transformation-layer/migrations/010_raw_ingestion_correlation_index.sql) - Adds `idx_raw_topic_correlation` on `raw_ingestion (topic, correlation_id, status, source_system, created_at DESC)` for the per-aggregate lookups of the transformation job (idempotent).
 
 ---
 
