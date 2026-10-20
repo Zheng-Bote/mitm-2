@@ -1,0 +1,55 @@
+Spec: Feature raw_ingestion index for per-correlation_id lookups
+
+Purpose:
+  Speed up the transformation job, which needs ~5 minutes for 500 records in PROD (`raw_ingestion` with ~82k rows).
+  The claim query (HAVING subquery and UPDATE) and `load_counterparts` look up fragments per `(topic, correlation_id)` including status `processed`.
+  `idx_raw_pending_topics` only covers status `pending`, so each aggregate caused sequential scans over the whole table.
+
+Platform: PostgreSQL
+
+References:
+  ../../../mitm-2.sdd
+  ../../../transformation-layer/transformation-layer.sdd
+
+Owns:
+  ./**
+
+Can modify:
+  /transformation-layer/migrations/**
+  /migrations/setup.sql
+  /docs/Transformation-layer/README.md
+  /CHANGELOG.md
+
+Decisions:
+  Column order `(topic, correlation_id, status, source_system, created_at DESC)`: `topic` and `correlation_id` are equality filters in all three queries, `status` serves `IN ('pending','processed')`, `source_system, created_at DESC` serve `COUNT(DISTINCT source_system)` and the `DISTINCT ON` ordering of `load_counterparts`.
+  Partial index `WHERE correlation_id IS NOT NULL`, because the job ignores fragments without `correlation_id`.
+  Plain `CREATE INDEX` instead of `CONCURRENTLY`: at ~82k rows the build takes seconds, and the statement also works when `setup.sql` runs inside a transaction.
+  The index belongs to the transformation migrations (not `collector-layer`), because only the transformation job needs it.
+
+Must:
+  `idx_raw_topic_correlation` exists on `raw_ingestion`.
+  The migration is idempotent (safe to re-run with `setup.sql`).
+
+Must not:
+  Change code in `mitm_transformation_main` or the collector layer.
+  Change or drop `idx_raw_pending_topics`.
+
+Tasks:
+  [x] #1 Add `transformation-layer/migrations/010_raw_ingestion_correlation_index.sql`.
+  [x] #2 Append the migration to `migrations/setup.sql`.
+  [x] #3 Update `CHANGELOG.md` and `docs/Transformation-layer/README.md`.
+  [ ] #4 Verify on the dev database: run the migration, re-run it, check the plans with `EXPLAIN (ANALYZE, BUFFERS)`.
+  [ ] #5 Run in PROD and compare the run time for 500 records.
+
+Done when:
+  `\d raw_ingestion` lists `idx_raw_topic_correlation`, re-running the migration changes nothing, and the plans of the claim query and `load_counterparts` use the index instead of `Seq Scan on raw_ingestion`.
+
+Scenario: migration re-run
+  Given `idx_raw_topic_correlation` already exists
+  When the migration runs again
+  Then nothing changes
+
+Scenario: counterpart lookup
+  Given `raw_ingestion` contains processed fragments of many correlation_ids
+  When the transformation job loads the counterparts of one aggregate
+  Then the plan uses `idx_raw_topic_correlation`
