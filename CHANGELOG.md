@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **WebAuthn Authentication**: Feature specs `specs/features/webauthn-authentication/webauthn-authentication.sdd` and `specs/features/webauthn-only-auth/webauthn-only-auth.sdd`. Session tokens are issued only after a server-verified WebAuthn (FIDO2) ceremony; covers the mandatory `INITIAL_ADMIN_TOKEN` (≥ 32 characters) for a single bootstrap admin, per-IP rate limiting of the auth endpoints, server-side `client_ip` derivation, passkey-only login for the desktop and web frontends, and logging of RP origin / RP ID mismatches to `system_logs`.
+- **Database**: Migration `migrations/004_webauthn_and_department.sql` adds `admin_users.department` and the tables `webauthn_credentials` (passkeys incl. AAGUID, sign count, YubiKey serial) and `webauthn_states` (ceremony challenges with expiry), including grants for `mitm_user`.
+- **Database**: Migration `migrations/003_admin_users_profile.sql` adds `first_name` / `last_name` to `admin_users` (Issue #53).
+- **Database**: Migration `migrations/001_user_sessions_patch.sql` adds `user_sessions` with absolute 24 h TTL, 2 h idle timeout and `client_ip`.
+- **RBAC**: Backend role resolution via Casbin enforcer (also in the IPC middleware, replacing remaining mocks); web frontend role hierarchy with case-insensitive checks, RBAC sidebar rules, route guards and a stop button for scheduler jobs; audit logs for `VIEWER` actions.
+- **Documentation**: API standards in `docs/Architecture/architecture.md` (JSON:API error payloads, session TTLs, `403` for inactive users); `docs/AI_Workflow_DE.md` / `docs/AI_Workflow_EN.md`.
+- **SpecDD**: Integrated the SpecDD framework (`.specdd/bootstrap.md`, `.specdd/bootstrap.project.md`, `AGENTS.md`) and aligned all layer specs; specs now explicitly separate `system_logs`, `job_audit_logs` and `admin_audit_logs`.
+
+### Changed
+- **Roles**: Role `UPLOADER` renamed to `USER` and role descriptions updated (`migrations/002_update_roles.sql`, `migrations/setup.sql`).
+- **Collector Documentation**: `collector-layer/collector_concept.md` and `collector-layer/collector_creation_guide.md` rewritten against the Oracle reference collector (`mitm_collector_ora`) and the Rust scheduler (`core-layer/mitm_scheduler-server`): IPC protocol (`get_credentials`, `status`, `audit`), cleared child environment (`MASTER_KEY` only via IPC), `scheduled_programs` job registration, exit-code based run result, `restart_on_exit`, SIGTERM/SIGKILL handling, `ingestion_cursors` schema, deterministic UUIDv5 `correlation_id`, `db_where_in`, atomic batch + cursor commits, build/versioning.
+- **Repository**: `admin-frontend/mitm_fe_web`, `core-layer` and `maintenance-layer/mitm_key_rotation` are independent repositories; their submodule gitlinks were removed.
+- **CI**: GitLab sync workflow disabled (`.github/workflows/syn-to-gitlab.yml_`).
+
 ### Fixed
 - **Transformation performance**: new index `idx_raw_topic_correlation` on `raw_ingestion (topic, correlation_id, status, source_system, created_at DESC)` (migration `transformation-layer/migrations/010_raw_ingestion_correlation_index.sql`, appended to `migrations/setup.sql`). The claim query and `load_counterparts` look up fragments per `correlation_id` including status `processed`, which `idx_raw_pending_topics` does not cover, so every aggregate caused sequential scans over the whole table (PROD: ~5 minutes for 500 records at ~82k rows). The migration is idempotent.
 - **Transformation Errors API**: `transformation_errors.created_at` is now `TIMESTAMPTZ` (migration `transformation-layer/migrations/009_transformation_errors_timestamptz.sql`, appended to `migrations/setup.sql`). The `TIMESTAMP` column could not be decoded by the http-server, so `GET /api/v1/logs/transformation-errors` and the system statistics answered HTTP 500 as soon as the table had rows. Existing values are converted as UTC; the migration is idempotent ([mitm_transformation_main#9](https://github.com/Zheng-Bote/mitm_transformation_main/issues/9)).
