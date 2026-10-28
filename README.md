@@ -91,8 +91,8 @@ The diagram below shows how the system boundaries are structured and how the com
 
 ```mermaid
 flowchart TB
-    admin[/"<b>Person: Administrator</b><br/>(Desktop-/Web-Interface)"/]
-    mta[/"<b>Automate: Medical Devices</b><br/>(Desktop-Client)"/]
+    admin("<b>Person: Administrator</b><br/>(Desktop-/Web-Interface)")
+    mta[["<b>Automate: Medical Devices</b><br/>(Desktop-Client)"]]
 
     subgraph system ["System Boundary: MitM Data Aggregator"]
         core["<b>Core-Layer</b><br/>HTTP, IAM, Scheduler<br/>(Supervised Components)"]
@@ -104,30 +104,32 @@ flowchart TB
     end
 
     sources[/"<b>External Systems</b><br/>Data Sources<br/>(Databases, CSV/Excel/JSON, REST APIs, Kafka, MFT, ...)"/]
-    saas[/"<b>External System</b><br/>Targets<br/>(Apigee or SaaS Platform, e.g. Cority, EHS Platform, ...)"/]
+    saas[\"<b>External Systems</b><br/>Targets<br/>(Apigee or SaaS Platform, e.g. Cority, EHS Platform, ...)"\]
 
-    admin -->|Manages configuration & DLQ, creates reports| core
-    mta -->|collect & sends medical data| core
-    core -->|Triggers collector| collector
-    core -->|Triggers transformation| transformer
-    core -->|Triggers cleanup| maintenance
-    core -->|Triggers delivery| delivery
+    admin -->|"<b>manages</b><br/>configuration & DLQ, creates reports"| core
+    mta -->|"<b>collects & sends</b><br/>medical data"| core
+    core -->|"<b>triggers</b><br/> collector"| collector
+    core -->|"<b>triggers</b><br/> transformation"| transformer
+    core -->|"<b>triggers</b><br/> cleanup"| maintenance
+    core -->|"<b>triggers</b><br/> delivery"| delivery
 
-    collector -->|Fetches raw data| sources
-    collector -->|Saves raw encrypted data| storage
+    collector -->|"<b>input</b><br>Fetches raw data"| sources
+    collector -->|"<b>saves</b><br/>raw encrypted data"| storage
 
-    transformer -->|Reads raw & writes validated records| storage
+    transformer -->|"<b>reads</b><br/>raw & writes validated records"| storage
 
-    delivery -->|Reads validated records & writes packages| storage
-    delivery -->|Delivers packages| saas
+    delivery -->|"<b>reads</b><br/>validated records & writes packages"| storage
+    delivery -->|"<b>output</b><br>Delivers packages"| saas
 
-    maintenance -->|Purges old records & files| storage
+    maintenance -->|"<b>purges</b><br/>old records & files"| storage
 
-    classDef system fill:#1168bd,stroke:#0b4c8c,color:#fff;
+    classDef coresystem fill:#1168bd,stroke:#0b4c8c,color:#fff;
+    classDef system fill:#23A2D9,stroke:#0E7DAD,color:#fff;
     classDef external fill:#999999,stroke:#666666,color:#fff;
-    classDef actor fill:#08427b,stroke:#052e56,color:#fff;
+    classDef actor fill:#6C6477,stroke:#4D4D4D,color:#fff;
 
-    class collector,transformer,delivery system;
+    class core,storage coresystem;
+    class collector,transformer,maintenance,delivery system;
     class sources,saas external;
     class admin,mta actor;
 ```
