@@ -21,7 +21,7 @@ Can modify:
   /admin-frontend/mitm_fe_web/**
 
 Must:
-  Session tokens are issued only by `/api/v1/auth/webauthn/login/finish` and by the bootstrap `/api/v1/auth/webauthn/register/finish`.
+  Session tokens are issued only by `/api/v1/auth/webauthn/login/finish`, by the bootstrap `/api/v1/auth/webauthn/register/finish` and, after a verified OIDC login, by `/api/v1/auth/oidc/callback` as defined in ../oidc-authentication/oidc-authentication.sdd.
   The session's `client_ip` is derived server-side from the TCP peer address, or from the rightmost `X-Forwarded-For` entry when `MITM_TRUST_PROXY_HEADERS` is `true`.
   Requests to `/api/v1/auth/webauthn/*` and `/api/v1/auth/bootstrap/*` are rate-limited per client IP and answered with `429` when the limit is exceeded.
   When no user exists in `admin_users` at startup, `INITIAL_ADMIN_TOKEN` must be set with at least `32` characters; otherwise the http-server logs an error to the console and terminates with a non-zero exit code.
@@ -29,7 +29,7 @@ Must:
   At most one bootstrap administrator is created, even when bootstrap ceremonies run concurrently.
   WebAuthn ceremonies rejected for an RP origin or RP ID mismatch are logged to `system_logs` with the expected origin; clients receive only the generic verification error.
   The desktop frontend authenticates and re-authenticates only through the passkey ceremony of @LoginDialog.
-  The web frontend authenticates only through the passkey ceremony via `@simplewebauthn/browser` and is served from the WebAuthn RP origin.
+  The web frontend authenticates through the passkey ceremony via `@simplewebauthn/browser` or, when enabled, through OIDC, and is served from the WebAuthn RP origin.
 
 Must not:
   Accept a client-supplied `client_ip`.
