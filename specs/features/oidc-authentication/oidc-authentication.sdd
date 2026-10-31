@@ -1,0 +1,70 @@
+Spec: Feature OIDC Authentication
+
+Purpose:
+  Let users of the web frontend sign in through the corporate OAuth2/OIDC identity provider (authorization code flow with PKCE) in addition to the WebAuthn passkey ceremony; the core-layer acts as the OIDC client and issues its own session after a verified login.
+
+Platform: Rust/Axum, Angular v22/Spartan-NG
+
+References:
+  ../../../mitm-2.sdd
+  ../../../core-layer/core-layer.sdd
+  ../../../core-layer/specs/security.sdd
+  ../../../core-layer/mitm_http-server/specs/api_spec.sdd
+  ../../../admin-frontend/mitm_fe_web/mitm_fe_web.sdd
+  ../webauthn-only-auth/webauthn-only-auth.sdd
+
+Owns:
+  ./**
+
+Can modify:
+  /core-layer/mitm_http-server/**
+  /admin-frontend/mitm_fe_web/**
+
+Must:
+  OIDC is enabled only when `OIDC_ISSUER`, `OIDC_CLIENT_ID` and `OIDC_REDIRECT_URI` are set; `OIDC_CLIENT_SECRET` is optional (public client); otherwise the OIDC endpoints answer `404`.
+  `OIDC_ISSUER` must equal the issuer published by the IdP discovery document character for character.
+  `GET /api/v1/auth/oidc/config` returns `{"enabled": bool}`.
+  `GET /api/v1/auth/oidc/login` stores `state`, `nonce` and the PKCE verifier (S256) server-side for 10 minutes, binds them to the browser with an `HttpOnly`, `Secure`, `SameSite=Lax` cookie and redirects to the IdP authorization endpoint.
+  `GET /api/v1/auth/oidc/callback` is the redirect URI registered at the IdP.
+  The callback accepts a login state only once and only from the browser holding the matching cookie, and rejects an `iss` parameter that differs from `OIDC_ISSUER`.
+  The callback redeems the code with the PKCE verifier and validates the ID token signature, issuer, audience, expiry and nonce.
+  The ID token `sub` claim must equal an existing `admin_users.username`; unknown and inactive users are rejected and logged to `admin_audit_logs`.
+  After a successful callback the server issues a session exactly like `/api/v1/auth/webauthn/login/finish` (24 h absolute, server-side `client_ip`) and redirects the browser to `/auth/callback?handoff=<id>`.
+  The handoff id is single-use, expires after 60 seconds and is exchanged for `{"session_token": "..."}` via `POST /api/v1/auth/oidc/exchange`.
+  Callback failures redirect to `/login?sso_error=<code>` without exposing IdP or token details.
+  The OIDC endpoints are public and rate-limited like the WebAuthn endpoints.
+  The OIDC client secret is kept only in memory and wiped with `zeroize`.
+  The web frontend shows the SSO sign-in only when `oidc/config` reports `enabled`; the passkey sign-in stays available.
+
+Must not:
+  Put the session token or any IdP token into a URL.
+  Persist IdP access, refresh or ID tokens.
+  Create users from OIDC logins.
+
+Tasks:
+  [x] #1 Allow OIDC-issued sessions in webauthn-only-auth.sdd, api_spec.sdd and mitm_fe_web.sdd.
+  [x] #2 Implement the OIDC endpoints and configuration in core-layer/mitm_http-server.
+  [x] #3 Add the SSO sign-in and the `/auth/callback` route to admin-frontend/mitm_fe_web.
+  [x] #4 Update API documentation, READMEs and CHANGELOGs.
+
+Done when:
+  `cargo build` and `cargo test` for core-layer and `ng build` and the unit tests for mitm_fe_web succeed, and a user whose `sub` exists in `admin_users` reaches the dashboard via SSO.
+
+Scenario: successful SSO login
+  Given OIDC is configured and `admin_users` contains an active user named like the IdP `sub`
+  When the user clicks "Sign in with SSO" and authenticates at the IdP
+  Then the IdP redirects to `/api/v1/auth/oidc/callback`
+  And the browser lands on `/auth/callback?handoff=<id>`
+  And the frontend exchanges the handoff for a session token and opens the dashboard
+
+Scenario: unknown user
+  Given the IdP `sub` does not exist in `admin_users`
+  When the callback is processed
+  Then no session is issued
+  And the browser is redirected to `/login?sso_error=unknown_user`
+
+Scenario: replayed callback
+  Given a callback URL whose state was already consumed
+  When it is requested again
+  Then no session is issued
+  And the browser is redirected to `/login?sso_error=invalid_state`
