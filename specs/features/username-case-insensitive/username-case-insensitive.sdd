@@ -36,7 +36,7 @@ Tasks:
   [x] #1 Add @mitm_common::username::normalize with unit tests.
   [x] #2 Canonicalize usernames in core-layer/mitm_http-server (IAM create, WebAuthn register and login start, OIDC callback) and answer duplicates with `409`.
   [x] #3 Canonicalize configured admin usernames in core-layer/mitm_iam-server.
-  [ ] #4 Add migration `005_username_uppercase.sql` and append it to `setup.sql`.
+  [x] #4 Add migration `005_username_uppercase.sql` and append it to `setup.sql`.
   [x] #5 Update oidc-authentication.sdd, API documentation and CHANGELOGs.
 
 Done when:
