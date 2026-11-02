@@ -1,0 +1,67 @@
+Spec: Feature OIDC Profile Sync
+
+Purpose:
+  Keep the profile of an `admin_users` row (first name, last name, e-mail) aligned with the corporate identity provider by taking the claims of every successful OAuth2/OIDC login, and let administrators view and maintain the e-mail address through the IAM API and the desktop frontend.
+
+Platform: Rust/Axum/PostgreSQL, C++26/Qt6
+
+References:
+  ../../../mitm-2.sdd
+  ../../../core-layer/core-layer.sdd
+  ../../../core-layer/mitm_http-server/specs/api_spec.sdd
+  ../../../admin-frontend/mitm_fe_cpp/mitm_fe_cpp.sdd
+  ../oidc-authentication/oidc-authentication.sdd
+  ../username-case-insensitive/username-case-insensitive.sdd
+
+Owns:
+  ./**
+  /migrations/006_admin_users_email.sql
+
+Can modify:
+  /migrations/setup.sql
+  /core-layer/mitm_http-server/**
+  /admin-frontend/mitm_fe_cpp/**
+
+Must:
+  `admin_users` has a nullable `email` column.
+  The OIDC authorization request includes the scope `email`.
+  After a successful OIDC login of an active user, the validated ID token claims overwrite the stored profile: `given_name` sets `first_name`, `family_name` sets `last_name` and `email` sets `email`.
+  A claim that is missing or empty after trimming leaves the stored value unchanged.
+  A failed profile update is logged to `system_logs` and does not prevent the login.
+  `GET /api/v1/iam/users` returns `id`, `username`, `first_name`, `last_name`, `department`, `email` and `is_active` for every user.
+  `GET /api/v1/iam/users/:id` returns the same fields plus `role_ids` for one user, and `404` for an unknown id.
+  `POST /api/v1/iam/users` and `PUT /api/v1/iam/users/:id` accept `email`; a value that is empty after trimming is stored as `NULL`, and a `PUT` without `email` leaves it unchanged.
+  The users table of @RbacWidget shows an `eMail` column, and its Add User and Edit User dialogs edit the e-mail address.
+
+Must not:
+  Change `admin_users` for a rejected OIDC login (unknown or inactive user, invalid token).
+
+Tasks:
+  [x] #1 Add migration `006_admin_users_email.sql` and append it to `setup.sql`.
+  [x] #2 Request the `email` scope and sync the profile claims in core-layer/mitm_http-server.
+  [x] #3 Return `email` from `GET /api/v1/iam/users` and the user object from `GET /api/v1/iam/users/:id` in core-layer/mitm_http-server.
+  [x] #4 Read `role_ids` from the user object in @RbacWidget of admin-frontend/mitm_fe_cpp.
+  [x] #5 Update api_spec.sdd, API documentation and CHANGELOGs.
+  [x] #6 Accept `email` in `POST` and `PUT /api/v1/iam/users` in core-layer/mitm_http-server.
+  [x] #7 Add the `eMail` column and dialog fields to @RbacWidget in admin-frontend/mitm_fe_cpp.
+
+Done when:
+  `cargo build`, `cargo test` and the mitm_fe_cpp build succeed and an OIDC login with filled `given_name`, `family_name` and `email` is reflected in `GET /api/v1/iam/users/:id`.
+
+Scenario: profile updated on login
+  Given the active user `Q225265` has `first_name` `Max` and no `email`
+  And the validated ID token has `given_name` `Maximilian`, `family_name` `Mustermann` and `email` `max.mustermann@example.com`
+  When the OIDC callback completes
+  Then `admin_users` holds `Maximilian`, `Mustermann` and `max.mustermann@example.com` for `Q225265`
+
+Scenario: empty claim keeps stored value
+  Given the active user `Q225265` has `last_name` `Mustermann`
+  And the validated ID token has an empty `family_name`
+  When the OIDC callback completes
+  Then `last_name` remains `Mustermann`
+
+Scenario: inactive user
+  Given the user `Q225265` is inactive
+  When the OIDC callback completes with valid claims
+  Then the login is rejected with `inactive_user`
+  And the row of `Q225265` is unchanged
