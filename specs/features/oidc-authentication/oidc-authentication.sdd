@@ -28,7 +28,7 @@ Must:
   `GET /api/v1/auth/oidc/callback` is the redirect URI registered at the IdP.
   The callback accepts a login state only once and only from the browser holding the matching cookie, and rejects an `iss` parameter that differs from `OIDC_ISSUER`.
   The callback redeems the code with the PKCE verifier and validates the ID token signature, issuer, audience, expiry and nonce.
-  The ID token `sub` claim must equal an existing `admin_users.username`; unknown and inactive users are rejected and logged to `admin_audit_logs`.
+  The ID token `sub` claim, in the canonical form defined by ../username-case-insensitive/username-case-insensitive.sdd, must equal an existing `admin_users.username`; unknown and inactive users are rejected and logged to `admin_audit_logs`.
   After a successful callback the server issues a session exactly like `/api/v1/auth/webauthn/login/finish` (24 h absolute, server-side `client_ip`) and redirects the browser to `/auth/callback?handoff=<id>`.
   The handoff id is single-use, expires after 60 seconds and is exchanged for `{"session_token": "..."}` via `POST /api/v1/auth/oidc/exchange`.
   Callback failures redirect to `/login?sso_error=<code>` without exposing IdP or token details.

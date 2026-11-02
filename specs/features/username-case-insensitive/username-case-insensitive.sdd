@@ -1,0 +1,64 @@
+Spec: Feature Case-Insensitive Usernames
+
+Purpose:
+  Treat login IDs that differ only in letter case (e.g. `q225265` and `Q225265`) as the same user across IAM user management, the WebAuthn ceremonies and OIDC sign-in, by storing and comparing usernames in one canonical form.
+
+Platform: Rust/Axum/PostgreSQL
+
+References:
+  ../../../mitm-2.sdd
+  ../../../core-layer/core-layer.sdd
+  ../../../core-layer/specs/security.sdd
+  ../../../core-layer/mitm_http-server/specs/api_spec.sdd
+  ../oidc-authentication/oidc-authentication.sdd
+  ../webauthn-only-auth/webauthn-only-auth.sdd
+
+Owns:
+  ./**
+  /migrations/005_username_uppercase.sql
+
+Can modify:
+  /migrations/setup.sql
+  /core-layer/mitm_common/**
+  /core-layer/mitm_http-server/**
+  /core-layer/mitm_iam-server/**
+
+Must:
+  The canonical username is the input with surrounding whitespace removed and ASCII letters converted to uppercase.
+  A canonical username matches `^[A-Z0-9._-]{1,64}$`.
+  Every username entering the core-layer from a client, the IdP or the configuration is canonicalized by @mitm_common::username::normalize before it is stored or compared.
+  `admin_users.username` and `user_sessions.os_user` hold canonical usernames only; the database rejects other values for `admin_users.username`.
+  The OIDC `sub` claim is canonicalized after the ID token has been validated.
+  `POST /api/v1/iam/users` answers `400` for a username that does not match the format and `409` for an existing username.
+  The migration aborts without changes when existing usernames collide after canonicalization.
+
+Tasks:
+  [x] #1 Add @mitm_common::username::normalize with unit tests.
+  [x] #2 Canonicalize usernames in core-layer/mitm_http-server (IAM create, WebAuthn register and login start, OIDC callback) and answer duplicates with `409`.
+  [x] #3 Canonicalize configured admin usernames in core-layer/mitm_iam-server.
+  [ ] #4 Add migration `005_username_uppercase.sql` and append it to `setup.sql`.
+  [x] #5 Update oidc-authentication.sdd, API documentation and CHANGELOGs.
+
+Done when:
+  `cargo build` and `cargo test` for core-layer succeed and logins with `q225265` and `Q225265` resolve to the same `admin_users` row.
+
+Scenario: login with different case
+  Given `admin_users` contains `Q225265`
+  When a client starts a WebAuthn login with `q225265`
+  Then the ceremony is started for `Q225265`
+
+Scenario: OIDC subject in lowercase
+  Given `admin_users` contains the active user `Q225265`
+  And the validated ID token has `sub` `q225265`
+  When the OIDC callback completes
+  Then a session for `Q225265` is issued
+
+Scenario: case-variant duplicate
+  Given `admin_users` contains `Q225265`
+  When an administrator creates the user `q225265`
+  Then the request is answered with `409`
+
+Scenario: invalid username
+  When an administrator creates the user `max mustermann`
+  Then the request is answered with `400`
+  And no user is stored
