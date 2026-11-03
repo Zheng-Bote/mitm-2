@@ -1,0 +1,45 @@
+Spec: Feature Session Profile E-Mail
+
+Purpose:
+  Show the complete profile of the signed-in user, including department and e-mail address, in the User Settings dialog of the web frontend.
+
+Platform: Rust/Axum/PostgreSQL, Angular v22
+
+References:
+  ../../../mitm-2.sdd
+  ../../../core-layer/core-layer.sdd
+  ../../../core-layer/mitm_http-server/specs/api_spec.sdd
+  ../../../admin-frontend/mitm_fe_web/mitm_fe_web.sdd
+  ../oidc-profile-sync/oidc-profile-sync.sdd
+
+Owns:
+  ./**
+
+Can modify:
+  /core-layer/mitm_http-server/**
+  /admin-frontend/mitm_fe_web/**
+
+Must:
+  `GET /api/v1/auth/me` additionally returns `department` and `email` of the signed-in user from `admin_users`; both are `null` when not set.
+  The User Settings dialog of mitm_fe_web shows the e-mail address below the department, and `-` when it is not set.
+
+Must not:
+  Remove or rename existing fields of the `GET /api/v1/auth/me` response.
+
+Tasks:
+  [x] #1 Return `department` and `email` from `GET /api/v1/auth/me` in core-layer/mitm_http-server.
+  [x] #2 Show the e-mail address in the User Settings dialog of admin-frontend/mitm_fe_web.
+  [x] #3 Update api_spec.sdd, API documentation and CHANGELOGs.
+
+Done when:
+  `cargo build`, `cargo test` and the mitm_fe_web build and tests succeed and the User Settings dialog shows the stored e-mail address.
+
+Scenario: e-mail set
+  Given the signed-in user `Q225265` has `email` `max.mustermann@example.com`
+  When the user opens User Settings
+  Then the dialog shows `max.mustermann@example.com` as e-mail
+
+Scenario: e-mail not set
+  Given the signed-in user `Q225265` has no `email`
+  When the user opens User Settings
+  Then the dialog shows `-` as e-mail
