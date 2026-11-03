@@ -1,0 +1,57 @@
+Spec: Feature User Role Assignment (Web)
+
+Purpose:
+  Let administrators see and change the roles of every user in the User Management page of the web frontend, including when a user is created.
+
+Platform: Rust/Axum/PostgreSQL, Angular v22
+
+References:
+  ../../../mitm-2.sdd
+  ../../../core-layer/core-layer.sdd
+  ../../../core-layer/mitm_http-server/specs/api_spec.sdd
+  ../../../admin-frontend/mitm_fe_web/mitm_fe_web.sdd
+  ../oidc-profile-sync/oidc-profile-sync.sdd
+
+Owns:
+  ./**
+
+Can modify:
+  /core-layer/mitm_http-server/**
+  /admin-frontend/mitm_fe_web/**
+
+Must:
+  `POST /api/v1/iam/users` answers `201 Created` with the JSON body `{"id": <new user id>}`.
+  The users table of the mitm_fe_web User Management page shows a `Roles` column with the role names of each user, read from `role_ids` of `GET /api/v1/iam/users/:id`, and `-` when the user has no role.
+  The Add User and Edit User dialogs list all roles from `GET /api/v1/iam/roles` as checkboxes; editing preselects the user's current roles.
+  When the signed-in user deselects the `ADMIN` role on their own account, the dialog shows a warning, and saving requires an explicit confirmation; after saving, the own session roles are reloaded from `GET /api/v1/auth/me`.
+  Saving the dialog stores the selected roles with `POST /api/v1/iam/assign-role` after the user was created or updated; for a new user the id from the `POST /api/v1/iam/users` response is used.
+
+Must not:
+  Change role assignments other than through `POST /api/v1/iam/assign-role`.
+  Send `assign-role` when the role selection of an edited user is unchanged.
+
+Tasks:
+  [x] #1 Return the new user id from `POST /api/v1/iam/users` in core-layer/mitm_http-server.
+  [x] #2 Add the `Roles` column and role checkboxes to the User Management page of admin-frontend/mitm_fe_web.
+  [x] #3 Update api_spec.sdd, API documentation and CHANGELOGs.
+  [x] #4 Warn before the signed-in administrator removes their own `ADMIN` role in admin-frontend/mitm_fe_web.
+
+Done when:
+  `cargo build`, `cargo test` and the mitm_fe_web build and tests succeed, and a user created with the role `VIEWER` is listed with `VIEWER` in the `Roles` column.
+
+Scenario: assign roles to a new user
+  Given the roles `ADMIN`, `USER` and `VIEWER` exist
+  When an administrator adds the user `Q225265` with the role `VIEWER`
+  Then `GET /api/v1/iam/users/:id` of `Q225265` returns the `role_ids` of `VIEWER`
+  And the `Roles` column of `Q225265` shows `VIEWER`
+
+Scenario: administrator removes their own ADMIN role
+  Given the signed-in user `ADMIN1` has the role `ADMIN`
+  When `ADMIN1` edits their own account and deselects `ADMIN`
+  Then the dialog warns that the own administrator access will be lost
+  And the roles are only saved after `ADMIN1` confirms
+
+Scenario: change roles of an existing user
+  Given the user `Q225265` has the role `VIEWER`
+  When an administrator edits `Q225265`, selects `USER` and deselects `VIEWER`
+  Then the `Roles` column of `Q225265` shows `USER`
