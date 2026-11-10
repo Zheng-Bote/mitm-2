@@ -1,7 +1,7 @@
-Spec: Feature Maintenance Monitor (Phase 1)
+Spec: Feature Maintenance Monitor
 
 Purpose:
-  Detect critical errors of the MitM system and write them as mail files into the outbox directory of mitm_maintenance_sendmail. Phase 1 covers failed and hanging job runs, system_logs errors and new dead letters. Feature issue: https://github.com/Zheng-Bote/mitm_maintenance_monitor/issues/1
+  Detect critical errors of the MitM system and write them as mail files into the outbox directory of mitm_maintenance_sendmail. Phase 1 covers failed and hanging job runs, system_logs errors and new dead letters; phase 2 adds missed runs, critical admin actions, a daily digest and a heartbeat. Feature issue: https://github.com/Zheng-Bote/mitm_maintenance_monitor/issues/1
 
 Platform: Go/Linux, PostgreSQL
 
@@ -36,19 +36,24 @@ Must:
   Messages are truncated to `max_message_chars`; with `metadata_only` error texts are omitted and replaced by a link to `frontend_url`.
   Mail files use the header-block format (`To`, `Cc`, `Subject`, `X-MitM-Severity`, `X-MitM-Category`, `X-MitM-Source`, empty line, body) of mitm_maintenance_sendmail issue #1, have deterministic names derived from their source entries, are written as `*.tmp` with mode `0600` and renamed to `*.SendMail`.
   Mail files are written before cursors and alert state are committed in one database transaction (at-least-once; deterministic names make a repeated run overwrite the same files).
+  An enabled scheduled program whose cron time (evaluated like mitm_scheduler-server: crate `cron` 0.12, UTC, weekdays 1-7 with Sunday = 1, day of month AND day of week) has no run that started within `[time - 1 min, time + grace_minutes]`, while no previous run was still running, produces a missed-run mail (category `job`); missed runs are enabled by default and evaluated for at most the last 24 hours.
+  With `sources.admin_audit_logs.enabled`, a new `admin_audit_logs` entry with a configured action produces a mail of category `security` and severity `SECURITY` containing only allowlisted `details` fields.
+  With `digest.enabled`, one mail per day after `hour_utc` summarizes the last 24 hours: runs per job, grouped `WARNING:` job audits and `WARN` system logs, DLQ backlog, transformation errors and open alerts.
+  With `heartbeat.enabled`, one mail per day after `hour_utc` reports run statistics, open alerts, invalid cron expressions and the source positions.
   The monitor fetches the MitM database configuration via scheduler IPC, reports `status` and `audit` events via a nil-safe IPC client and exits with code 1 after a `failed` status event and an `ERROR: <message>` audit event on every fatal error.
 
 Must not:
   Decrypt data, read `raw_ingestion` or write to `raw_ingestion` or `ingestion_cursors`.
   Send mails itself.
-  Write secrets, keys, payloads or `dead_letter_queue.payload` into mail files, logs or IPC events.
+  Write secrets, keys, payloads, `dead_letter_queue.payload` or non-allowlisted `admin_audit_logs.details` into mail files, logs or IPC events.
 
 Tasks:
   [x] #1 Migration 007 `monitor_state` / `monitor_alerts` (also appended to setup.sql).
   [x] #2 mitm_maintenance_monitor: configuration, IPC, database access, sources `program_runs`, `system_logs`, `dead_letter_queue`.
   [x] #3 Suppression, recovery, rate limit, routing, truncation, mail rendering and atomic file writing.
   [x] #4 Unit tests, README, CHANGELOG, build.sh; add the job to maintenance-layer.sdd.
-  [ ] #5 Phase 2: `admin_audit_logs` (after the core-layer gaps are closed), daily digest, heartbeat, missed runs from `scheduled_programs.cron_expr` (cron crate semantics: UTC, 5 fields + seconds, weekdays 1-7 with Sunday = 1).
+  [x] #5 Phase 2: missed runs from `scheduled_programs.cron_expr` (cron crate semantics, verified against the crate), `admin_audit_logs`, daily digest, heartbeat.
+  [ ] #6 core-layer: log failed logins and create/update of source/target credentials to `admin_audit_logs`, harmonize action names (feature issue #1, scope).
 
 Done when:
   `go vet`, `go build` and `go test` succeed, and a failed collector run produces exactly one mail file in `mail_dir` that mitm_maintenance_sendmail can send once issue #1 of that repository is implemented.
@@ -65,6 +70,12 @@ Scenario: repeated failure is suppressed
   When the job fails again and the monitor runs
   Then no mail is written
   And the suppressed counter of the alert is increased
+
+Scenario: scheduler down
+  Given mitm_scheduler-server is not running
+  And the enabled program `clean up` has the cron expression `55 */8 * * *`
+  When the monitor runs
+  Then a missed-run mail for `clean up` is written for its last cron time
 
 Scenario: recovery
   Given an open, mailed alert for job `Collector mirror-dev Employee DE`
