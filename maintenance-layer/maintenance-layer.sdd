@@ -1,18 +1,21 @@
 Spec: Maintenance Layer
-Purpose: Provide administrative, diagnostic, and key-rotation utilities for the system.
 
 Platform: Go/Linux
+
+Purpose:
+  Provide administrative, diagnostic, notification, and key-rotation utilities for the system.
 
 Structure:
   ./mitm_adm-data-debug/
   ./mitm_key_rotation/
   ./mitm_maintenance_cleanup/
   ./mitm_maintenance_config/
+  ./mitm_maintenance_sendmail/
 
 Owns:
   ./**
 
 Must:
-  Strictly separate logging concerns: system_logs for lifecycle/errors, job_audit_logs for processing metrics, admin_audit_logs for manual triggers/config changes.
-  Operate as standalone, demand-driven CLI tools or cron jobs, independent of the scheduler.
+  Strictly separate logging concerns: `system_logs` for lifecycle/errors, `job_audit_logs` for processing metrics, `admin_audit_logs` for manual triggers/config changes.
+  Operate as standalone, demand-driven CLI tools or scheduled batch jobs.
   Connect directly to the database or utilize system APIs when permitted.
