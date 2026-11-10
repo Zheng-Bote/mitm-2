@@ -1,0 +1,67 @@
+Spec: Feature Collector Failure Logging
+
+Purpose:
+  Make every fatal collector error visible in job_audit_logs, so that a failed run shows its cause next to the exit code the scheduler writes to system_logs.
+
+Platform: Go/Linux
+
+References:
+  ../../../mitm-2.sdd
+  ../../../collector-layer/collector-layer.sdd
+  ../job-failure-logging/job-failure-logging.sdd
+
+Owns:
+  ./**
+
+Can modify:
+  /collector-layer/mitm_collector_cdh/main.go
+  /collector-layer/mitm_collector_cdh/CHANGELOG.md
+  /collector-layer/mitm_collector_csv-xls/main.go
+  /collector-layer/mitm_collector_csv-xls/CHANGELOG.md
+  /collector-layer/mitm_collector_employee_ora/main.go
+  /collector-layer/mitm_collector_employee_ora/CHANGELOG.md
+  /collector-layer/mitm_collector_employee_pg/main.go
+  /collector-layer/mitm_collector_employee_pg/CHANGELOG.md
+  /collector-layer/mitm_collector_kafka/main.go
+  /collector-layer/mitm_collector_kafka/CHANGELOG.md
+  /collector-layer/mitm_collector_mft/main.go
+  /collector-layer/mitm_collector_mft/CHANGELOG.md
+  /collector-layer/mitm_collector_ora/main.go
+  /collector-layer/mitm_collector_ora/CHANGELOG.md
+  /collector-layer/mitm_collector_pg/main.go
+  /collector-layer/mitm_collector_pg/CHANGELOG.md
+  /CHANGELOG.md
+
+Must:
+  Every fatal error of a collector sends the `failed` status event and the audit event `ERROR: <message>` to the scheduler and then exits with code 1, using one fatal helper per collector.
+  Unparsable collector arguments (JSON in `os.Args[1]`) are a fatal error; a collector must not continue with default values.
+  mitm_collector_mft checks every cipher initialization and the minimum length of the wrapped DEK instead of panicking.
+  mitm_collector_cdh sends the actual error message instead of a generic text.
+
+Must not:
+  Send secrets (passwords, client secrets, access tokens, Master Key, decrypted payloads or source configurations) in status or audit events.
+  Change the behavior of a collector on successful runs.
+
+Tasks:
+  [x] #1 mitm_collector_ora and mitm_collector_employee_ora: fatal helper for all fatal errors, abort on unparsable arguments.
+  [x] #2 mitm_collector_pg and mitm_collector_employee_pg: fatal helper for all fatal errors, abort on unparsable arguments.
+  [x] #3 mitm_collector_kafka: fatal helper for all fatal errors, abort on unparsable arguments.
+  [x] #4 mitm_collector_mft: fatal helper for all fatal errors, abort on unparsable arguments, error checks instead of panics.
+  [x] #5 mitm_collector_csv-xls: use the existing fatal helper for the remaining fatal errors.
+  [x] #6 mitm_collector_cdh: report the actual error, also for invalid job arguments.
+  [x] #7 Update versions and CHANGELOGs; add a CHANGELOG to mitm_collector_cdh.
+
+Done when:
+  `go vet`, `go build` and `go test` succeed for every collector, and a failing run of each collector shows its error in job_audit_logs.
+
+Scenario: unparsable collector arguments
+  Given the job arguments are not valid JSON
+  When the scheduler runs any collector job
+  Then the collector exits with code 1
+  And job_audit_logs contains `ERROR: ...` with the parse error for the run
+
+Scenario: source credentials missing
+  Given there is no active `source_credentials` entry for the configured source
+  When the scheduler runs any collector job
+  Then the collector exits with code 1
+  And job_audit_logs contains `ERROR: ...` naming the failed credential lookup for the run
