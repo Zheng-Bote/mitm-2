@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Collector Failure Logging**: Feature spec `specs/features/collector-failure-logging/collector-failure-logging.sdd`. All collectors send every fatal error as `failed` status event and as audit event (`ERROR: <message>`) to `job_audit_logs` and abort on unparsable job arguments: `mitm_collector_ora` 0.17.1, `mitm_collector_employee_ora` 0.17.1, `mitm_collector_pg` 0.16.1, `mitm_collector_employee_pg` 0.4.4, `mitm_collector_kafka` 0.8.4, `mitm_collector_mft` 1.0.1 (also no panic on invalid key data), `mitm_collector_csv-xls` 0.11.5; `mitm_collector_cdh` reports the actual error instead of a generic text.
 - **Job Failure Logging**: Feature spec `specs/features/job-failure-logging/job-failure-logging.sdd`. `mitm_collector_employee-tmp-assigns_ora` 0.2.2 sends every fatal error as audit event to `job_audit_logs` and aborts on unparsable arguments; core-layer `mitm_scheduler-server` 1.3.4 writes non-zero job exit codes to `system_logs`.
 
 ### Added
