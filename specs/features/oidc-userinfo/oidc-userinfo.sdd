@@ -1,0 +1,61 @@
+Spec: Feature OIDC UserInfo Profile Sync
+
+Purpose:
+  After a successful OIDC login, retrieve the claims of the identity provider's UserInfo endpoint on the server and use them, together with the ID token claims, to keep first name, last name, e-mail and department of `admin_users` up to date. The IdP access token never leaves the server.
+
+Platform: Rust/Axum/PostgreSQL
+
+References:
+  ../../../mitm-2.sdd
+  ../../../core-layer/core-layer.sdd
+  ../../../core-layer/mitm_http-server/specs/api_spec.sdd
+  ../oidc-authentication/oidc-authentication.sdd
+  ../oidc-profile-sync/oidc-profile-sync.sdd
+  ../me-profile-email/me-profile-email.sdd
+
+Owns:
+  ./**
+
+Can modify:
+  /core-layer/mitm_http-server/**
+  /CHANGELOG.md
+
+Must:
+  After the ID token is validated and the user is known and active, mitm_http-server requests the IdP UserInfo endpoint (from the discovery document) with the access token of the token response and the ID token `sub` as expected subject; a UserInfo response for another subject is rejected.
+  A filled UserInfo claim takes precedence over the ID token claim: `given_name` → `first_name`, `family_name` → `last_name`, `email` → `email`; the claim named by `OIDC_DEPARTMENT_CLAIM` (default `department`, string value) → `department`.
+  A claim that is missing or empty after trimming in both sources leaves the stored value unchanged.
+  If the IdP has no UserInfo endpoint, or the request fails or times out, the login continues with the ID token claims; a failed request is logged with level `WARN` to system_logs.
+  OIDC requests to the IdP (discovery, token, UserInfo) time out after 10 seconds.
+
+Must not:
+  Send the IdP access token, ID token or UserInfo response to the browser or store them.
+  Request UserInfo for a rejected login (unknown or inactive user, invalid token).
+  Change the API contract; `GET /api/v1/auth/me` already returns `first_name`, `last_name`, `department` and `email`.
+
+Tasks:
+  [x] #1 UserInfo request with expected subject and custom claim type for the department claim.
+  [x] #2 Merge UserInfo and ID token claims; sync `department` in addition to name and e-mail.
+  [x] #3 `OIDC_DEPARTMENT_CLAIM`, request timeout, failure handling.
+  [x] #4 Unit tests, README, API documentation, CHANGELOG.
+
+Done when:
+  `cargo build` and `cargo test` of mitm-http-server succeed, and an OIDC login stores the UserInfo `department` in `admin_users.department`.
+
+Scenario: department from UserInfo
+  Given the active user `Q225265` signs in via OIDC
+  And the ID token has no `department` claim
+  And the UserInfo response has `department` `FG-123`
+  When the callback completes
+  Then `admin_users.department` of `Q225265` is `FG-123`
+
+Scenario: UserInfo overrides ID token
+  Given the ID token has `email` `old@example.com`
+  And the UserInfo response has `email` `new@example.com`
+  When the callback completes
+  Then `admin_users.email` is `new@example.com`
+
+Scenario: UserInfo unavailable
+  Given the UserInfo request fails
+  When the callback completes
+  Then the user is signed in with the ID token claims
+  And system_logs contains a `WARN` entry for the failed UserInfo request
