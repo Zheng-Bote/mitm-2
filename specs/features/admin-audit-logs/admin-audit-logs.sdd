@@ -1,0 +1,62 @@
+Spec: Feature Complete and Trustworthy Admin Audit Logs
+
+Purpose:
+  Make `admin_audit_logs` complete and trustworthy for security alerting by mitm_maintenance_monitor: log failed logins and credential changes, never drop audit entries silently, separate client-reported actions from server actions and use consistent action names. Issue: https://github.com/Zheng-Bote/mitm_core-layer/issues/86
+
+Platform: Rust/Axum/PostgreSQL, Go/Linux
+
+References:
+  ../../../mitm-2.sdd
+  ../../../core-layer/core-layer.sdd
+  ../../../core-layer/mitm_http-server/specs/api_spec.sdd
+  ../maintenance-monitor/maintenance-monitor.sdd
+  ../webauthn-authentication/webauthn-authentication.sdd
+  ../oidc-authentication/oidc-authentication.sdd
+
+Owns:
+  ./**
+
+Can modify:
+  /core-layer/mitm_http-server/**
+  /maintenance-layer/mitm_maintenance_monitor/**
+  /CHANGELOG.md
+
+Must:
+  Every admin_audit_logs entry of mitm_http-server is written with a JSON object as `details`; a failing audit write is logged to STDOUT and to system_logs (level `ERROR`) instead of being dropped.
+  Server-side action names are UPPER_SNAKE_CASE constants of one module; `assign_roles` becomes `ASSIGN_ROLES`, `key_rotation_success` becomes `KEY_ROTATION_SUCCESS`.
+  A failed WebAuthn login (`login/start`: invalid or unknown user, inactive account, no passkeys; `login/finish`: unknown or expired ceremony, failed verification, inactive account) writes `USER_LOGIN_FAILED` with details `{"method": "webauthn", "reason": <reason>, "client_ip": <ip>}`.
+  A rejected OIDC login (`invalid_state`, `invalid_issuer`, `invalid_id_token`, `invalid_username`, `unknown_user`, `inactive_user`) writes `USER_LOGIN_FAILED` with details `{"method": "oidc", "reason": <reason>, "client_ip": <ip>}`; successful logins keep `USER_LOGIN_OIDC` / `USER_LOGIN_WEBAUTHN`; IdP-side errors and technical failures are not login failures.
+  Creating or updating source credentials writes `UPSERT_CREDENTIAL` with `id`, `source_name`, `connector_type`, `topic`, `is_active` and `operation` (`create` / `update`).
+  Creating or updating delivery targets writes `UPSERT_TARGET_CREDENTIAL` with `id`, `topic`, `adapter_type`, `endpoint_url` (without user info, query and fragment), `is_active` and `operation`.
+  Client-reported actions of `POST /api/v1/system/action` are stored as `CLIENT_<ACTION>` (upper case, characters other than A-Z and 0-9 replaced by `_`, at most 64 characters).
+  mitm_maintenance_monitor reports by default `ASSIGN_ROLES`, `RESTORE_CONFIG`, `KEY_ROTATION_SUCCESS`, `UPSERT_CREDENTIAL`, `DELETE_CREDENTIAL`, `UPSERT_TARGET_CREDENTIAL`, `DELETE_TARGET_CREDENTIAL`, `FORBIDDEN_ACCESS`, `USER_LOGIN_FAILED` and `BOOTSTRAP_ADMIN_REGISTERED`.
+
+Must not:
+  Write secrets (`config_payload`, passwords, tokens, WebAuthn assertions or challenges, OIDC codes or state) into admin_audit_logs.
+  Migrate or rewrite existing admin_audit_logs rows.
+  Change HTTP responses or the API contract.
+
+Tasks:
+  [x] #1 core-layer: audit module with action constants, `client_action`, `redact_url`; `Repository::audit` reports failed writes.
+  [x] #2 core-layer: JSON details for all existing audit writes (transformation config, delete credentials/targets); upper-case action names.
+  [x] #3 core-layer: `USER_LOGIN_FAILED` for WebAuthn and OIDC; `UPSERT_CREDENTIAL` / `UPSERT_TARGET_CREDENTIAL`; `CLIENT_` prefix.
+  [x] #4 monitor: new default actions.
+  [x] #5 Tests, CHANGELOGs, API documentation.
+
+Done when:
+  `cargo test` of mitm-http-server and `go test` of mitm_maintenance_monitor succeed, and every audit write of mitm_http-server produces a row in admin_audit_logs.
+
+Scenario: failed passkey verification
+  Given a WebAuthn login ceremony for `Q225265`
+  When `login/finish` fails the passkey verification
+  Then admin_audit_logs contains `USER_LOGIN_FAILED` for `Q225265` with method `webauthn` and reason `verification_failed`
+
+Scenario: spoofed client action
+  Given an authenticated client
+  When it posts `{"action": "DELETE_CREDENTIAL"}` to `/api/v1/system/action`
+  Then admin_audit_logs contains `CLIENT_DELETE_CREDENTIAL`
+  And mitm_maintenance_monitor does not report it as `DELETE_CREDENTIAL`
+
+Scenario: deleted transformation rule
+  Given an administrator deletes a transformation rule
+  Then admin_audit_logs contains `DELETE_RULE` with details `{"id": <id>}`

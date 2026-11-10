@@ -53,7 +53,7 @@ Tasks:
   [x] #3 Suppression, recovery, rate limit, routing, truncation, mail rendering and atomic file writing.
   [x] #4 Unit tests, README, CHANGELOG, build.sh; add the job to maintenance-layer.sdd.
   [x] #5 Phase 2: missed runs from `scheduled_programs.cron_expr` (cron crate semantics, verified against the crate), `admin_audit_logs`, daily digest, heartbeat.
-  [ ] #6 core-layer: complete and trustworthy `admin_audit_logs` (failed logins, credential create/update, client action prefix, action names): https://github.com/Zheng-Bote/mitm_core-layer/issues/86
+  [x] #6 core-layer: complete and trustworthy `admin_audit_logs` (feature spec `../admin-audit-logs/admin-audit-logs.sdd`) (failed logins, credential create/update, client action prefix, action names): https://github.com/Zheng-Bote/mitm_core-layer/issues/86
 
 Done when:
   `go vet`, `go build` and `go test` succeed, and a failed collector run produces exactly one mail file in `mail_dir` that mitm_maintenance_sendmail can send once issue #1 of that repository is implemented.
