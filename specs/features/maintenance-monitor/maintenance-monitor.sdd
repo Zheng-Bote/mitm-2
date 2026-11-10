@@ -1,0 +1,73 @@
+Spec: Feature Maintenance Monitor (Phase 1)
+
+Purpose:
+  Detect critical errors of the MitM system and write them as mail files into the outbox directory of mitm_maintenance_sendmail. Phase 1 covers failed and hanging job runs, system_logs errors and new dead letters. Feature issue: https://github.com/Zheng-Bote/mitm_maintenance_monitor/issues/1
+
+Platform: Go/Linux, PostgreSQL
+
+References:
+  ../../../mitm-2.sdd
+  ../../../maintenance-layer/maintenance-layer.sdd
+  ../../../maintenance-layer/mitm_maintenance_monitor/mitm_maintenance_monitor.sdd
+  ../../../maintenance-layer/mitm_maintenance_sendmail/mitm_maintenance_sendmail.sdd
+  ../collector-failure-logging/collector-failure-logging.sdd
+  ../job-failure-logging/job-failure-logging.sdd
+
+Owns:
+  ./**
+
+Can modify:
+  /maintenance-layer/maintenance-layer.sdd
+  /maintenance-layer/mitm_maintenance_monitor/**
+  /migrations/007_monitor_state.sql
+  /migrations/setup.sql
+  /CHANGELOG.md
+
+Must:
+  The monitor runs as scheduled batch job without resident state and keeps its progress in the feature tables `monitor_state` (one cursor per source) and `monitor_alerts` (suppression state per fingerprint), created by migration 007.
+  On its first run per source the monitor initializes the cursor to the current position and writes no mail for older entries.
+  A finished `program_runs` row with `success = false` produces one mail with job name, run ID, exit code, start/end time and the `ERROR:` lines of `job_audit_logs` of that run (fallback: the last `failed` message of `job_status_events`).
+  A `program_runs` row without `finished_at` that runs longer than `hanging_minutes` produces one mail.
+  A new `system_logs` entry with at least `min_level` produces one mail, except entries of excluded components and the scheduler message `Job <name> failed with code <code> (RunID: <id>)`, which is covered by `program_runs`.
+  A new unresolved `dead_letter_queue` entry produces one mail with ID, package ID, error code, error message and time, never the payload.
+  Within `suppress_repeat_minutes` an alert with the same fingerprint produces no new mail; the next mail reports the number of suppressed occurrences. When `recovery_mail` is enabled, the first successful run of a job with an open, mailed alert produces a recovery mail and closes the alert.
+  At most `max_mails_per_run` mails are written per run; all further mails are bundled into one summary mail.
+  Recipients are resolved from the `routing` rules by category (`job`, `system`, `dlq`); rules with category `*` apply when no specific rule matches.
+  Messages are truncated to `max_message_chars`; with `metadata_only` error texts are omitted and replaced by a link to `frontend_url`.
+  Mail files use the header-block format (`To`, `Cc`, `Subject`, `X-MitM-Severity`, `X-MitM-Category`, `X-MitM-Source`, empty line, body) of mitm_maintenance_sendmail issue #1, have deterministic names derived from their source entries, are written as `*.tmp` with mode `0600` and renamed to `*.SendMail`.
+  Mail files are written before cursors and alert state are committed in one database transaction (at-least-once; deterministic names make a repeated run overwrite the same files).
+  The monitor fetches the MitM database configuration via scheduler IPC, reports `status` and `audit` events via a nil-safe IPC client and exits with code 1 after a `failed` status event and an `ERROR: <message>` audit event on every fatal error.
+
+Must not:
+  Decrypt data, read `raw_ingestion` or write to `raw_ingestion` or `ingestion_cursors`.
+  Send mails itself.
+  Write secrets, keys, payloads or `dead_letter_queue.payload` into mail files, logs or IPC events.
+
+Tasks:
+  [x] #1 Migration 007 `monitor_state` / `monitor_alerts` (also appended to setup.sql).
+  [x] #2 mitm_maintenance_monitor: configuration, IPC, database access, sources `program_runs`, `system_logs`, `dead_letter_queue`.
+  [x] #3 Suppression, recovery, rate limit, routing, truncation, mail rendering and atomic file writing.
+  [x] #4 Unit tests, README, CHANGELOG, build.sh; add the job to maintenance-layer.sdd.
+  [ ] #5 Phase 2: `admin_audit_logs` (after the core-layer gaps are closed), daily digest, heartbeat, missed runs from `scheduled_programs.cron_expr` (cron crate semantics: UTC, 5 fields + seconds, weekdays 1-7 with Sunday = 1).
+
+Done when:
+  `go vet`, `go build` and `go test` succeed, and a failed collector run produces exactly one mail file in `mail_dir` that mitm_maintenance_sendmail can send once issue #1 of that repository is implemented.
+
+Scenario: failed collector run
+  Given the collector job `Collector mirror-dev Employee DE` finished with exit code 1 as run 3732
+  And job_audit_logs contains `ERROR: Failed to execute query on Oracle table 'employee': ORA-00904 ...` for run 3732
+  When the monitor runs
+  Then mail_dir contains one `*.SendMail` file with subject `[MitM][ERROR] Job Collector mirror-dev Employee DE failed (RunID 3732, exit code 1)` and the error line in its body
+
+Scenario: repeated failure is suppressed
+  Given a mail for the same job and error was written 30 minutes ago
+  And `suppress_repeat_minutes` is 240
+  When the job fails again and the monitor runs
+  Then no mail is written
+  And the suppressed counter of the alert is increased
+
+Scenario: recovery
+  Given an open, mailed alert for job `Collector mirror-dev Employee DE`
+  When the job finishes successfully and the monitor runs
+  Then a mail `[MitM][INFO] Job Collector mirror-dev Employee DE recovered (RunID <id>)` is written
+  And the alert is closed
