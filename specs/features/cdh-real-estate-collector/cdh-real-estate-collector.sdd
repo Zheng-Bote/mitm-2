@@ -1,0 +1,68 @@
+Spec: Feature CDH Real Estate Collector
+
+Purpose:
+  Port the Python script `cdh_real-estate_country_flat.py` to the Go collector mitm_collector_cdh_real_estate: collect the CDH real-estate hierarchy (locations > buildings > levels > rooms) per country, flatten it into one row per entity and store every row encrypted in raw_ingestion.
+
+Platform: Go/Linux
+
+References:
+  ../../../mitm-2.sdd
+  ../../../collector-layer/collector-layer.sdd
+  ../../../collector-layer/collector_concept.md
+  ../../../collector-layer/collector_creation_guide.md
+  ../collector-failure-logging/collector-failure-logging.sdd
+  ../../../collector-layer/mitm_collector_cdh_real_estate/data/v2_ERD.md
+
+Owns:
+  ./**
+
+Can modify:
+  /collector-layer/collector-layer.sdd
+  /collector-layer/mitm_collector_cdh_real_estate/**
+  /CHANGELOG.md
+
+Must:
+  The decrypted source configuration (`source_credentials.config_payload`) contains `client_id`, `client_secret`, `auth_url`, `endpoint_url`, `hub`, `region`, `stage` and optionally `page_size` (1..1000, default 1000) and `timeout_seconds` (default 60).
+  The collector arguments (JSON in `os.Args[1]`) contain `source_name`, `dataset_id`, `tables` (`locations`, `buildings`, `levels`, `rooms`), `countries` (ISO-3166 alpha-2) and optionally `topic` (default `cdh.real_estate.data`), `bulk_children` (default false), `max_pages` and `insecure_skip_verify` (default false).
+  The access token is requested with the OAuth2 client-credentials grant (`client_id`, `client_secret`, scope `machine2machine client_<client_id>`) at `auth_url`.
+  Tables are read via `GET <endpoint_url>` with `table`, `hub`, `region`, `stage`, `dataset_id`, `filter` (JSON) and `limit`, following `next_token` until it is empty or `max_pages` is reached; no column list is requested, so all columns of a table are returned (`*`).
+  Per country the collector reads the locations with `country_iso2=<country>`, then buildings per `location_code`, levels per `building_code` and rooms per `level_code`; with `bulk_children` it reads each child table once and filters it locally.
+  A request is retried on HTTP 5xx, 429, timeouts and connection errors (4 attempts, backoff 5/10/20 s); on HTTP 401/403 the token is refreshed once. A request that still fails is skipped and logged as job audit event; any other HTTP 4xx is a fatal error.
+  Rows without primary key and duplicate primary keys are dropped; orphaned child rows are reported as job audit event.
+  The flat row is the left join locations > buildings > levels > rooms; columns are prefixed with `loc_`, `bld_`, `lvl_`, `room_` except the join keys `location_code`, `building_code`, `level_code`, `room_code`; `data_source` and `ingest_date` are only kept for locations; `row_level` is `room`, `level`, `building` or `location`.
+  Every flat row is one raw_ingestion record; the business key is the code of its deepest level (`room_code`, `level_code`, `building_code`, `location_code`).
+  The cursor is the SHA-256 fingerprint of all flat rows of all countries; if it equals the stored cursor, nothing is written. Otherwise all rows and the cursor are written in one database transaction.
+  `insecure_skip_verify` disables TLS certificate verification for the token and data requests and is logged as job audit event.
+  Every fatal error is sent as `failed` status event and as audit event `ERROR: <message>` and exits with code 1.
+
+Must not:
+  Send or log client secret, access token, Master Key, decrypted payloads or the decrypted source configuration.
+  Write CSV or XLSX files.
+  Request a fixed column list from the API.
+
+Tasks:
+  [x] #1 Collector arguments, source configuration, IPC and envelope encryption following collector_creation_guide.md.
+  [x] #2 OAuth2 token, paginated table fetch with retry, token refresh and skip logging.
+  [x] #3 Hierarchy fetch per country, dedupe, orphan check and flat rows.
+  [x] #4 Fingerprint cursor and atomic ingestion of all rows.
+  [x] #5 Unit tests, README, CHANGELOG, build.sh; add the collector to collector-layer.sdd.
+
+Done when:
+  `go vet`, `go build` and `go test` succeed, and a run against the CDH API writes one encrypted raw_ingestion record per flat row.
+
+Scenario: unchanged snapshot
+  Given the stored cursor equals the fingerprint of the collected flat rows
+  When the collector runs
+  Then no raw_ingestion record is written
+  And job_audit_logs contains that the snapshot is unchanged
+
+Scenario: location without buildings
+  Given a location of country `AT` has no building
+  When the collector runs
+  Then one flat row with `row_level` `location` and business key `location_code` is written
+
+Scenario: request keeps failing
+  Given the rooms request for one level returns HTTP 503 four times
+  When the collector runs
+  Then the request is skipped
+  And job_audit_logs contains the table and filter of the skipped request

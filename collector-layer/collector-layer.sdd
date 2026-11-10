@@ -4,6 +4,7 @@ Purpose: Fetch data from various source systems (APIs, SQL, CSV) and store it in
 Platform: Go/Linux
 
 Structure:
+  ./mitm_collector_cdh_real_estate/
   ./mitm_collector_csv-xls/
   ./mitm_collector_employee-tmp-assigns_ora/
   ./mitm_collector_employee_ora/
