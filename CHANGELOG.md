@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Job Failure Logging**: Feature spec `specs/features/job-failure-logging/job-failure-logging.sdd`. `mitm_collector_employee-tmp-assigns_ora` 0.2.2 sends every fatal error as audit event to `job_audit_logs` and aborts on unparsable arguments; core-layer `mitm_scheduler-server` 1.3.4 writes non-zero job exit codes to `system_logs`.
+
 ### Added
 - **User Role Assignment (Web)**: Feature spec `specs/features/user-role-assignment/user-role-assignment.sdd`. `POST /api/v1/iam/users` returns the new user's id (core-layer `mitm_http-server` 3.2.0); the User Management page of `mitm_fe_web` 1.11.0 shows a Roles column and assigns roles in the Add/Edit User dialog via `POST /api/v1/iam/assign-role`.
 - **Session Profile E-Mail**: Feature spec `specs/features/me-profile-email/me-profile-email.sdd`. `GET /api/v1/auth/me` returns `department` and `email` (core-layer `mitm_http-server` 3.1.0); the User Settings dialog of `mitm_fe_web` 1.8.0 shows the e-mail address, and the department is now actually filled.

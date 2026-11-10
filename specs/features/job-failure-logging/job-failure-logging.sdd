@@ -1,0 +1,56 @@
+Spec: Feature Job Failure Logging
+
+Purpose:
+  Make failed collector runs visible in the database logs: the collector's fatal error message goes to job_audit_logs, and the scheduler records a non-zero exit code in system_logs.
+
+Platform: Go/Linux, Rust/Tokio/PostgreSQL
+
+References:
+  ../../../mitm-2.sdd
+  ../../../core-layer/core-layer.sdd
+  ../../../collector-layer/collector-layer.sdd
+
+Owns:
+  ./**
+
+Can modify:
+  /collector-layer/mitm_collector_employee-tmp-assigns_ora/main.go
+  /collector-layer/mitm_collector_employee-tmp-assigns_ora/CHANGELOG.md
+  /core-layer/mitm_scheduler-server/src/job_runner.rs
+  /core-layer/mitm_scheduler-server/Cargo.toml
+  /core-layer/mitm_scheduler-server/CHANGELOG.md
+  /CHANGELOG.md
+
+Must:
+  Every fatal error of mitm_collector_employee-tmp-assigns_ora (config and argument parsing, identifier validation, KEK validation, credential and DEK loading/decryption, MitM and Oracle connection, Oracle query, column metadata) sends the `failed` status event and the audit event `ERROR: <message>` to the scheduler and then exits with code 1.
+  Unparsable collector arguments (JSON in `os.Args[1]`) are a fatal error; the collector must not continue with default values.
+  When a job process exits with a non-zero exit code, mitm_scheduler-server writes `Job <name> failed with code <code> (RunID: <id>)` with level `ERROR` and component `Scheduler` to system_logs.
+  When waiting for a job process fails, mitm_scheduler-server writes the error with level `ERROR` to system_logs.
+
+Must not:
+  Write processing metrics to system_logs or lifecycle errors of the scheduler to job_audit_logs.
+
+Tasks:
+  [x] #1 Report every fatal error of mitm_collector_employee-tmp-assigns_ora as `failed` status event and audit event via a single `fatal` helper.
+  [x] #2 Log non-zero job exit codes and wait errors to system_logs in mitm_scheduler-server.
+  [x] #3 Update versions and CHANGELOGs.
+
+Done when:
+  `go vet` / `go build` of the collector and `cargo check` of mitm-scheduler-server succeed, and a failing collector run shows its error in job_audit_logs and its exit code in system_logs.
+
+Scenario: invalid column in Oracle query
+  Given the Oracle table `temp_assignment` has no column `BOSS_PERNR`
+  When the scheduler runs the collector job `Collector mirror-dev Employee DE`
+  Then job_audit_logs contains `ERROR: ... Failed to execute query on Oracle table 'employee': ORA-00904 ...` for the run
+  And system_logs contains `Job Collector mirror-dev Employee DE failed with code 1 (RunID: ...)` with level `ERROR`
+
+Scenario: unparsable collector arguments
+  Given the job arguments are not valid JSON
+  When the scheduler runs the collector job
+  Then the collector exits with code 1
+  And job_audit_logs contains `ERROR: Failed to parse collector arguments: ...` for the run
+
+Scenario: source credentials cannot be decrypted
+  Given the wrapped DEK cannot be decrypted with the KEK
+  When the scheduler runs the collector job
+  Then job_audit_logs contains `ERROR: ... Failed to decrypt wrapped DEK (KEK mismatch or corrupted key data)` for the run
