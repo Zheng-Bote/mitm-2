@@ -10,6 +10,7 @@ Structure:
   ./mitm_key_rotation/
   ./mitm_maintenance_cleanup/
   ./mitm_maintenance_config/
+  ./mitm_maintenance_monitor/
   ./mitm_maintenance_sendmail/
 
 Owns:
