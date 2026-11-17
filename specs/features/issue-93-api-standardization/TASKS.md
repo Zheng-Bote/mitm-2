@@ -1,0 +1,21 @@
+# Work Breakdown: API Standardization (Issue #93)
+
+- [x] **T1 – SpecDD Contract (`core-layer/mitm_http-server`)**: Anchor RMM Level 2 and the unified JSON response envelope (`id`, `status`, `code`, `title`, `detail`, `meta`, `data`) in `core-layer/mitm_http-server/specs/api_spec.sdd`, `core-layer/mitm_http-server/mitm_http-server.sdd`, and `core-layer/specs/features/issue-93/issue-93.sdd`.
+- [x] **T2 – Response & Request-ID Infrastructure (`core-layer/mitm_http-server`)**: Implement `RequestId` middleware (`X-Request-ID`), `ApiResponse<T>`, `ApiError`, and `ApiMeta` in `core-layer/mitm_http-server`, and migrate middlewares (`readiness_middleware`, `auth_middleware`, `authz_middleware`, `rate_limit_middleware`).
+- [x] **T3 – Handler & RMM Level 2 Route Migration (`core-layer/mitm_http-server`)**: Migrate `/api/v1/system`, `/api/v1/jobs`, `/api/v1/logs`, `/api/v1/dlq`, `/api/v1/config`, `/api/v1/iam`, and `/api/v1/auth` handlers to `ApiResponse<T>` / `ApiError`, add RMM Level 2 routes (`PUT /api/v1/iam/users/:id/roles`, `PUT /api/v1/jobs/:name`, `PUT`/`DELETE /api/v1/config/transformations/topic-dependencies/:topic`), and update `docs/api/api_v1.md` + unit tests.
+- [x] **T4 – Web Frontend Envelope Adaptation (`admin-frontend/mitm_fe_web`)**: Add envelope unwrapping / error handling in `mitm_fe_web` and update endpoint calls to the RMM Level 2 paths. Detailed tasks: `admin-frontend/mitm_fe_web/specs/issue-93-api-envelope.md` (branch `feature/issue-93-api-envelope`).
+  - [x] T4.1 `core/interceptors/api.interceptor.ts`: unwrap `data` for 2xx JSON envelopes (not for `responseType: 'arraybuffer'`); map error envelopes (`code`, `title`, `detail`, `id`).
+  - [x] T4.2 Error texts: `auth/auth-error-message.ts:20` and `features/rbac/rbac.component.ts:356` read `errors[0]`; `scheduler.service.ts` `formatError` reads `error.message` → use `detail`. FlatBuffers requests receive JSON errors as `ArrayBuffer` → decode.
+  - [x] T4.3 `core/services/rbac.service.ts:31`: `POST /iam/assign-role` → `PUT /iam/users/:id/roles` with `{role_ids}`.
+  - [x] T4.4 `features/scheduler/services/scheduler.service.ts`: `addJob` → `POST /jobs` with a single object (409 = exists); `editJob` → `PUT /jobs/:name` with `{command, args, cron_expr, enabled, restart_on_exit}`; show 422 details. `args` and `restart_on_exit` are added by fe_web #29 (branch `feature/issue-29-job-args`, 1.17.0).
+  - [x] T4.5 Check 403 handling: the interceptor logs out on every 403, including `RBAC_FORBIDDEN`; only `401`/`USER_INACTIVE` should log out.
+  - [x] T4.6 Update unit-test mocks (`*.spec.ts`) to the envelope.
+- [x] **T5 – C++ Frontend Envelope Adaptation (`admin-frontend/mitm_fe_cpp`)**: Update `mitm_fe_cpp` HTTP response handling to unwrap `data` and surface `code`/`title`/`detail`. Detailed tasks: `admin-frontend/mitm_fe_cpp/specs/feature_issue_93_api_envelope_tasks.md` (branch `feature/issue-93-api-envelope`).
+  - [x] T5.1 `src/ApiClient.cpp` `handleReply`: pass `data` of 2xx JSON envelopes to `onSuccess` (not for `application/x-flatbuffers`); pass `detail`/`title` (+ `code`, `id`) to `onError` instead of `reply->errorString()`.
+  - [x] T5.2 Raw `QNetworkRequest` calls bypass `ApiClient`: `LoginDialog.cpp` (bootstrap/status, webauthn login/register start/finish) and `AuthManager.cpp` (`/auth/me`) → unwrap `data`; replace `errors[0].detail` parsing (`LoginDialog.cpp:381, 526, 581, 743`).
+  - [x] T5.3 `RbacWidget.cpp:192`: `POST /iam/assign-role` → `PUT /iam/users/:id/roles`.
+  - [x] T5.4 `TopicDependenciesWidget.cpp:120/141`: `POST` → `PUT /topic-dependencies/:topic` with `{required_sources}`; `DELETE ?topic=` → `DELETE /topic-dependencies/:topic` (URL-encode the topic).
+  - [x] T5.5 `SchedulerWidget.cpp:211/243`: add → `POST /jobs` with a single object; edit → `PUT /jobs/:name`.
+  - [x] T5.6 `BackupRestoreWidget.cpp:43`: save `data` (the backup payload) to the file, not the envelope; otherwise restore fails with 422.
+  - [x] T5.7 `SourcesWidget.cpp` / `TargetCredentialsWidget.cpp`: create answers `201 {id}`; use `PUT /:id` for updates; delete answers `200` instead of `204`.
+  - [x] T5.8 Check 403 handling (`ApiClient.cpp:53` emits `unauthorized` for 403 too); update tests.
