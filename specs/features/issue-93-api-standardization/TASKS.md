@@ -1,0 +1,7 @@
+# Work Breakdown: API Standardization (Issue #93)
+
+- [x] **T1 – SpecDD Contract (`core-layer/mitm_http-server`)**: Anchor RMM Level 2 and the unified JSON response envelope (`id`, `status`, `code`, `title`, `detail`, `meta`, `data`) in `core-layer/mitm_http-server/specs/api_spec.sdd`, `core-layer/mitm_http-server/mitm_http-server.sdd`, and `core-layer/specs/features/issue-93/issue-93.sdd`.
+- [x] **T2 – Response & Request-ID Infrastructure (`core-layer/mitm_http-server`)**: Implement `RequestId` middleware (`X-Request-ID`), `ApiResponse<T>`, `ApiError`, and `ApiMeta` in `core-layer/mitm_http-server`, and migrate middlewares (`readiness_middleware`, `auth_middleware`, `authz_middleware`, `rate_limit_middleware`).
+- [ ] **T3 – Handler & RMM Level 2 Route Migration (`core-layer/mitm_http-server`)**: Migrate `/api/v1/system`, `/api/v1/jobs`, `/api/v1/logs`, `/api/v1/dlq`, `/api/v1/config`, `/api/v1/iam`, and `/api/v1/auth` handlers to `ApiResponse<T>` / `ApiError`, add RMM Level 2 routes (`PUT /api/v1/iam/users/:id/roles`, `PUT /api/v1/jobs/:name`, `PUT`/`DELETE /api/v1/config/transformations/topic-dependencies/:topic`), and update `docs/api/api_v1.md` + unit tests.
+- [ ] **T4 – Web Frontend Envelope Adaptation (`admin-frontend/mitm_fe_web`)**: Add envelope unwrapping / error handling in `mitm_fe_web` and update endpoint calls to the RMM Level 2 paths.
+- [ ] **T5 – C++ Frontend Envelope Adaptation (`admin-frontend/mitm_fe_cpp`)**: Update `mitm_fe_cpp` HTTP response handling to unwrap `data` and surface `code`/`title`/`detail`.
